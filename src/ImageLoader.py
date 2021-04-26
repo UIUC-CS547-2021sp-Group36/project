@@ -3,6 +3,8 @@ import random
 from collections import OrderedDict
 import torchvision as tv
 
+import torch
+
 
 class ImageFolderLabelIndex(object):
     def __init__(self, dataset):
@@ -10,25 +12,11 @@ class ImageFolderLabelIndex(object):
         
         #super slow and stupid. Could be done while loading.
         #If the classes are already sorted, we could do it with binary search.
-        current_class = None
-        class_firstindex = list()
-        class_list = list() #don't assume they are sorted.
-        for i, item in enumerate(self.dataset):
-            if item[1] != current_class:
-                current_class = item[1]
-                class_firstindex.append(i)
-                class_list.append(current_class)
-        
-        class_firstindex.append(len(self.dataset))
-        
-        class_ranges = list()
-        
-        assert len(class_list) + 1 == len(class_firstindex)
-        
-        for i, c in enumerate(class_list):
-            class_ranges.append((c,(class_firstindex[i], class_firstindex[i+1])))
-        self.ranges = dict(class_ranges)
-        self.sizes = dict([(label,end-begin) for label,(begin,end) in class_ranges])
+        tmp_sizes = torch.IntTensor([self.dataset.targets.count(i) for i in range(len(self.dataset.classes))])
+        cs = tmp_sizes.cumsum(0).tolist()
+        cs.insert(0,0)
+        self.ranges = dict([(i,(cs[i],cs[i+1])) for i in range(len(cs)-1)])
+        self.sizes = dict([(i,int(j)) for i,j in enumerate(tmp_sizes)])
     
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -88,10 +76,10 @@ if __name__ == "__main__":
         i_query = an_index.sample_item(label=l)
         i_pos = an_index.sample_item(label=l)
         i_neg = an_index.sample_item(exclude=l)
-        
+    
         print(l,i_query, i_pos, i_neg)
     
     import torchvision.models as models
     resnet18 = models.resnet18(pretrained=True)
     
-    resnet18.forward(all_train[0][0].unsqeeze(0)) #the unsqeeze is because resnet only wants batches.
+    resnet18.forward(all_train[0][0].unsqueeze(0)) #the unsqeeze is because resnet only wants batches.
