@@ -18,7 +18,7 @@ class ImageFolderLabelIndex(object):
                 current_class = item[1]
                 class_firstindex.append(i)
                 class_list.append(current_class)
-
+        
         class_firstindex.append(len(self.dataset))
         
         class_ranges = list()
@@ -36,14 +36,14 @@ class ImageFolderLabelIndex(object):
         elif isinstance(index, str):
             return self.ranges[self.dataset.class_to_idx[index]]
         else:
-            raise Exception("Cant query this index like that.")
+            raise Exception("Cant query this index like that. : {}".format(index))
     
     def sample_label(self,exclude=None,weighted_classes=True):
         
         
         if exclude is None:
-            options = self.sizes.keys()
-            weights = self.sizes.values()
+            options = list(self.sizes.keys())
+            weights = list(self.sizes.values())
         else:
             options, weights = zip(*[(i,j) for i,j in self.sizes.items() if not i == exclude])
         
@@ -59,10 +59,13 @@ class ImageFolderLabelIndex(object):
         if label is not None:
             return random.randrange(*self[label])
         elif exclude is not None:
-            return_label = self.sample_label(label,exclude=label)
-            return random.randrange(*self[label])
+            return_label = self.sample_label(exclude=exclude,weighted_classes=True)
+            return random.randrange(*self[return_label])
         else: #neither label nor exclude
             return random.randrange(0,len(self.dataset))
+    
+    def label_for_item(self, item_index):
+        return self.dataset.targets[item_index]
 
 if __name__ == "__main__":
     #testing
@@ -74,3 +77,12 @@ if __name__ == "__main__":
     an_index = ImageFolderLabelIndex(all_train)
     
     print("done indexing data")
+    
+    print("Example sampling")
+    for i in range(20):
+        l = an_index.sample_label(weighted_classes=False)
+        i_query = an_index.sample_item(label=l)
+        i_pos = an_index.sample_item(label=l)
+        i_neg = an_index.sample_item(exclude=l)
+        
+        print(l,i_query, i_pos, i_neg)
