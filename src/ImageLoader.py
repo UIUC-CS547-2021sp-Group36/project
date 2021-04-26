@@ -68,10 +68,14 @@ class ImageFolderLabelIndex(object):
         return self.dataset.targets[item_index]
 
 if __name__ == "__main__":
+    
+    import torch
+    from torchvision import datasets, transforms as T
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     #testing
     
     print("load data")
-    all_train = tv.datasets.ImageFolder("/workspace/datasets/tiny-imagenet-200/train")
+    all_train = tv.datasets.ImageFolder("/workspace/datasets/tiny-imagenet-200/train",transform=transform)
     
     print("index data")
     an_index = ImageFolderLabelIndex(all_train)
@@ -86,3 +90,8 @@ if __name__ == "__main__":
         i_neg = an_index.sample_item(exclude=l)
         
         print(l,i_query, i_pos, i_neg)
+    
+    import torchvision.models as models
+    resnet18 = models.resnet18(pretrained=True)
+    
+    resnet18.forward(all_train[0][0].unsqeeze(0)) #the unsqeeze is because resnet only wants batches.
