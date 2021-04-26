@@ -22,11 +22,16 @@ RUN apk add --no-cache unzip && \
 FROM luntlab/bw-pytorch:v1.5.0-libs as project_base
 MAINTAINER "Bryan J. Lunt <bjlunt2@illinois.edu>"
 
+RUN apt update && \
+    apt install -y git && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN conda install -y scipy && \
     conda install -c conda-forge yaml && \
     conda install -y -c conda-forge wandb
     
-RUN cd /tmp && \ git clone https://github.com/PyTorchLightning/pytorch-lightning.git && \
+RUN cd /tmp && \
+    git clone https://github.com/PyTorchLightning/pytorch-lightning.git && \
     cd pytorch-lightning && \
     git checkout 44d775fccfb825561937f6fa03fe258af25c2b83 && \
     python setup.py install && \
@@ -35,5 +40,3 @@ RUN cd /tmp && \ git clone https://github.com/PyTorchLightning/pytorch-lightning
 
 WORKDIR /workspace
 COPY --from=data_download /datasets /workspace/datasets
-
-FROM project_base as project_interactive
