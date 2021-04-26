@@ -11,9 +11,10 @@ RUN mkdir -p /datasets/imagesim/images && \
     echo "Downloaded datasets, size " $(du -sh ./imagesim)
 
 #Download Tiny Imagenet
-RUN cd /datasets && \
+RUN apk add --no-cache unzip && \
+    cd /datasets && \
     wget --progress=bar:force:noscroll -O tiny-imagenet-200.zip http://cs231n.stanford.edu/tiny-imagenet-200.zip && \
-    unzip -q tiny-imagenet-200.zip && \
+    unzip tiny-imagenet-200.zip && \
     rm -rf tiny-imagenet-200.zip && \
     echo "Downloaded Tiny Imagenet"
 
@@ -34,3 +35,5 @@ RUN cd /tmp && \ git clone https://github.com/PyTorchLightning/pytorch-lightning
 
 WORKDIR /workspace
 COPY --from=data_download /datasets /workspace/datasets
+
+FROM project_base as project_interactive
