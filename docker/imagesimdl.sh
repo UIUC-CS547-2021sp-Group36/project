@@ -11,7 +11,7 @@ echo "Beginning to download images"
 
 while read url
 do
-    wget -q ${url} -O $(echo ${url} | sed 's/^.*tbn://g')
+    wget -q ${url}.jpg -O $(echo ${url} | sed 's/^.*tbn://g')
 done < ../dload.txt
 
 echo "Done downloading images"
