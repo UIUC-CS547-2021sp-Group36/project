@@ -3,7 +3,8 @@
     - Cited as module:
         - https://papers.nips.cc/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf
         - https://www.cs.toronto.edu/~kriz/imagenet_classification_with_deep_convolutional.pdf
-    - Dataset (used in paper): https://sites.google.com/site/imagesimilaritydata/
+    - Dataset (Imagenet) : ImageNet ILSVRC-2012
+    - Dataset (triplets used in paper): https://sites.google.com/site/imagesimilaritydata/
     - Dataset (tiny-imagenet): http://cs231n.stanford.edu/tiny-imagenet-200.zip
         - All in JPEG format.
         - Another link with more explanation: https://paperswithcode.com/dataset/tiny-imagenet
