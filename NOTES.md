@@ -8,7 +8,8 @@
     - Dataset (tiny-imagenet): http://cs231n.stanford.edu/tiny-imagenet-200.zip
         - All in JPEG format.
         - Another link with more explanation: https://paperswithcode.com/dataset/tiny-imagenet
-    - Original Code: https://github.com/ArkinDharawat/DeepImageRanking
+    - Student Reimplementation Code: https://github.com/ArkinDharawat/DeepImageRanking
+    - Another Reimplementation : https://github.com/Zhenye-Na/image-similarity-using-deep-ranking 
 
 ### Tutorials and such
     - CNNs in PyTorch: https://www.analyticsvidhya.com/blog/2019/10/building-image-classification-models-cnn-pytorch/
