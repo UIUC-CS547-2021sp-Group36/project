@@ -12,7 +12,7 @@ for epoch in range(NUM_EPOCHS):
     #epoch loss = 0
     
     #batch loop
-    for Qs,Ps,Ns in dataloader:
+    for (Qs,Ps,Ns),labels in dataloader:
         
         #Qs is a tensor containing images. So if images are 64x64 in 3 colors,
         #the size of Q will be (BATCH_SIZE, 3, 64, 64)
