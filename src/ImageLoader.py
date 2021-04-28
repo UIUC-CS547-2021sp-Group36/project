@@ -61,11 +61,20 @@ class ImageFolderLabelIndex(object):
         
 
 class TripletSamplingDataLoader(torch.utils.data.DataLoader):
-    def __init__(self, dataset, batch_size, shuffle=True):
-        super(TripletSamplingDataLoader, self).__init__(dataset,batch_size=batch_size,shuffle=shuffle,collate_fn=self.collate_fn)
+    def __init__(self, dataset,
+                            batch_size=20,
+                            shuffle=True,
+                            num_workers: int = 0):
+        super(TripletSamplingDataLoader, self).__init__(dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            collate_fn=self.collate_fn)
         self.label_index = ImageFolderLabelIndex(self.dataset)
     
     def collate_fn(self, somedata):
+        #wi = torch.utils.data.get_worker_info()
+        
         query_tensor = torch.stack([i[0] for i in somedata])
         labels = [i[1] for i in somedata]
         
@@ -101,14 +110,16 @@ if __name__ == "__main__":
     
         print(l,i_query, i_pos, i_neg)
         
-    tsdl = TripletSamplingDataLoader(all_train,batch_size=20)
+    tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=2)
     
     for i, ((q,p,n),l) in enumerate(tsdl):
         print(q.shape)
         print(p.shape)
         print(n.shape)
-        print(l.shape)
-        break
+        print("batch ", i, l.tolist())
+        
+        if i == 3:
+            break
         
     
     
