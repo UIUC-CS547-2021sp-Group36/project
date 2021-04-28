@@ -8,6 +8,10 @@ import torch.utils.data
 
 from typing import Sequence
 class ImageFolderSubset(torch.utils.data.dataset.Subset):
+    """A class that represents a subset of a torchvision.datasets.ImageFolder
+    
+    The ImageFolder class has a number of other important properties that aren't reflected in the standard Subset class.
+    """
     def __init__(self, dataset: torchvision.datasets.ImageFolder, indices: Sequence[int]) -> None:
         
         sorted_indices = indices.copy()
@@ -136,10 +140,12 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
         
         return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
 
-def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",is_valid_file=None):
+def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",transform=None,is_valid_file=None):
     import torchvision
     from torchvision import datasets, transforms as T
-    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+    if transform is None:
+        #The training dataset is already sized at 64
+        transform = T.Compose([T.Resize(64), T.CenterCrop(64), T.ToTensor()])
     
     loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=is_valid_file)
     return loaded_dataset
