@@ -62,7 +62,7 @@ class ImageFolderLabelIndex(object):
 
 class TripletSamplingDataLoader(torch.utils.data.DataLoader):
     def __init__(self, dataset, batch_size, shuffle=True):
-        super(TripletSamplingDataloader, self).__init__(dataset,batch_size=batch_size,shuffle=shuffle,collate_fn=self.collate_fn)
+        super(TripletSamplingDataLoader, self).__init__(dataset,batch_size=batch_size,shuffle=shuffle,collate_fn=self.collate_fn)
         self.label_index = ImageFolderLabelIndex(self.dataset)
     
     def collate_fn(self, somedata):
