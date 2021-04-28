@@ -119,11 +119,18 @@ if __name__ == "__main__":
         
     tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=2)
     
+    import torchvision.models as models
+    resnet18 = models.resnet18(pretrained=True)
+    
     for i, ((q,p,n),l) in enumerate(tsdl):
         print(q.is_pinned())
         print(p.is_pinned())
         print(n.is_pinned())
         print("batch ", i, l.tolist())
+        
+        q_emb = resnet18(q)
+        
+        print(q_emb)
         
         if i == 3:
             break
