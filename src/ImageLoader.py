@@ -64,12 +64,14 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
     def __init__(self, dataset,
                             batch_size=20,
                             shuffle=True,
-                            num_workers: int = 0):
+                            num_workers: int = 0,
+                            pin_memory=False):
         super(TripletSamplingDataLoader, self).__init__(dataset,
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=num_workers,
-            collate_fn=self.collate_fn)
+            collate_fn=self.collate_fn,
+            pin_memory=pin_memory)
         self.label_index = ImageFolderLabelIndex(self.dataset)
     
     def collate_fn(self, somedata):
@@ -83,6 +85,11 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
         
         positive_image_tensor = torch.stack([self.dataset[i][0] for i in positive_image_indices])
         negative_image_tensor = torch.stack([self.dataset[i][0] for i in negative_image_indices])
+        
+        if self.pin_memory:
+            query_tensor.pin_memory() #consider stacking into a buffer that is already pinned.
+            positive_image_tensor.pin_memory()
+            negative_image_tensor.pin_memory()
         
         return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
 
@@ -113,9 +120,9 @@ if __name__ == "__main__":
     tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=2)
     
     for i, ((q,p,n),l) in enumerate(tsdl):
-        print(q.shape)
-        print(p.shape)
-        print(n.shape)
+        print(q.is_pinned())
+        print(p.is_pinned())
+        print(n.is_pinned())
         print("batch ", i, l.tolist())
         
         if i == 3:
