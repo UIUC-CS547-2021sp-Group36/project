@@ -7,4 +7,4 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 IMAGE_NAME="luntlab/cs547_project:latest"
 
 
-docker run -it --rm -v${SCRIPT_DIR}:/workspace/project ${IMAGE_NAME}
+docker run -it --rm -v${SCRIPT_DIR}:/workspace/project --ipc=host ${IMAGE_NAME}
