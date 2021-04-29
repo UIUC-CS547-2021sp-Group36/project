@@ -5,6 +5,7 @@ import wandb
 
 import ImageLoader
 import LossFunction
+import Model
 
 class Trainer(object):
     def __init__(self, model,
@@ -16,7 +17,12 @@ class Trainer(object):
         self.validation_set = validation_set
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01, weight_decay=1e-5) #TODO: not hardcoded
+        
+        #This should really be done automatically in the optimizer. Not thrilled with this.
+        #only optimize parameters that we want to optimize
+        optim_params = [p for p in self.model.parameters() if p.requires_grad]
+        
+        self.optimizer = torch.optim.SGD(optim_params, lr=0.01, weight_decay=1e-5) #TODO: not hardcoded
         self.learning_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
@@ -68,19 +74,18 @@ if __name__ == "__main__":
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
     
-    splits = ImageLoader.split_imagefolder(all_train, [0.02,0.98])
+    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.95,0.05])
     
     print("create dataloader")
-    tsdl = ImageLoader.TripletSamplingDataLoader(splits[0],batch_size=20, num_workers=2)
+    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=1)
     
     print("create model")
-    import torchvision.models as models
-    resnet18 = models.resnet18(pretrained=True)
+    model = Model.create_model("dummy")
     
-    wandb.watch(resnet18, log_freq=100)
+    wandb.watch(model, log_freq=100)
     
     print("create trainer")
-    test_trainer = Trainer(resnet18, tsdl, None)
+    test_trainer = Trainer(model, tsdl, None)
     
     print("Begin training")
     test_trainer.train(100)
