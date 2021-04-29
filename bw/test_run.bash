@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l walltime=10:30:0,nodes=1:xk:ppn=16,gres=shifter
+#PBS -l walltime=10:30:0,nodes=1:xk:ppn=32,gres=shifter
 
 module load shifter
 
