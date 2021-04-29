@@ -28,7 +28,7 @@ class Resnet18FrozenWrapper(torch.nn.Module):
     def forward(self, images):
         rn_embed = self.resnet(images)
         output = self.additional_layers(rn_embed)
-        return rn_embed
+        return output
     
     ##Doesn't Work
     #def freeze_resnet(self,freeze=True):
