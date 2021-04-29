@@ -5,4 +5,5 @@ module load shifter
 
 shifterimg pull luntlab/cs547_project:latest
 
-aprun -b  -- shifter --image=docker:luntlab/cs547_project:latest --module=mpich,gpu -- python -c "import torch; print(torch.cuda.is_available());"
+export OMP_NUM_THREADS=32
+aprun -b -n 1 -d 32  -- shifter --image=docker:luntlab/cs547_project:latest --module=mpich,gpu -- python -c "import torch; print(torch.cuda.is_available());"
