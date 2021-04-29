@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -l walltime=20:30:0,nodes=1:xe:ppn=32,gres=shifter
 
-cd $PBS_O_WORKDIR/..
+cd ${PBS_O_WORKDIR}
 
 module load shifter
 
