@@ -1,11 +1,16 @@
 import torch
 import torch.optim
 
+import wandb
+
 import ImageLoader
 import LossFunction
 
 class Trainer(object):
-    def __init__(self, model, dataloader:ImageLoader.TripletSamplingDataLoader, validation_set, g=1.0):
+    def __init__(self, model,
+            dataloader:ImageLoader.TripletSamplingDataLoader,
+            validation_set:ImageLoader.TripletSamplingDataLoader,
+            g=1.0):
         self.model = model
         self.dataloader = dataloader
         self.validation_set = validation_set
@@ -16,13 +21,16 @@ class Trainer(object):
         
         self.total_epochs = 0
         
+        #Logging
+        self.batch_log_interval = 10
+        
     def train(self, n_epochs):
         
         
         for _ in range(n_epochs):
             self.total_epochs += 1
             
-            for (Qs,Ps,Ns),l in self.dataloader:
+            for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
                 self.model.train(True)
                 self.optimizer.zero_grad()
                 
@@ -33,11 +41,12 @@ class Trainer(object):
                 batch_loss = self.loss_fn(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
                 batch_loss.backward()
                 
+                self.optimizer.step()
+                
                 #TODO: Add proper logging
                 #DEBUG
                 print("batch loss {} ".format(float(batch_loss)))
-                
-                self.optimizer.step()
+                wandb.log({"batch_loss":float(batch_loss)})
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
@@ -51,6 +60,10 @@ if __name__ == "__main__":
     import torchvision
     
     #testing
+    wandb.init(
+                entity='uiuc-cs547-2021sp-group36',
+                project='image_similarity',
+                group="debugging")
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
@@ -64,8 +77,10 @@ if __name__ == "__main__":
     import torchvision.models as models
     resnet18 = models.resnet18(pretrained=True)
     
+    wandb.watch(resnet18, log_freq=100)
+    
     print("create trainer")
     test_trainer = Trainer(resnet18, tsdl, None)
     
     print("Begin training")
-    test_trainer.train(1)
+    test_trainer.train(100)
