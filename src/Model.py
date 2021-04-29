@@ -20,6 +20,9 @@ class Resnet18FrozenWrapper(torch.nn.Module):
             torch.nn.Sigmoid()
         )
         
+        #FREEZING (search other files)
+        #This is supposed to help freeze the submodel, but the optimizer
+        #does not respect this alone. It's very sad.
         self.resnet.requires_grad = False
     
     def forward(self, images):

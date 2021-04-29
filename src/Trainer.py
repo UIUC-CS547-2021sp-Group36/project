@@ -1,3 +1,5 @@
+import time
+
 import torch
 import torch.optim
 
@@ -18,6 +20,7 @@ class Trainer(object):
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
         
+        #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
         #only optimize parameters that we want to optimize
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
@@ -37,6 +40,8 @@ class Trainer(object):
             self.total_epochs += 1
             
             for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
+                batch_start = time.time()
+                
                 self.model.train(True)
                 self.optimizer.zero_grad()
                 
@@ -49,10 +54,13 @@ class Trainer(object):
                 
                 self.optimizer.step()
                 
+                batch_end = time.time()
+                batch_time_per_item = float(batch_end-batch_start)/len(l)
+                
                 #TODO: Add proper logging
                 #DEBUG
-                print("batch loss {} ".format(float(batch_loss)))
-                wandb.log({"batch_loss":float(batch_loss)})
+                print("batch loss {} time {}s/item".format(float(batch_loss), batch_time_per_item))
+                wandb.log({"batch_loss":float(batch_loss), "time_per_item":batch_time_per_item})
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
