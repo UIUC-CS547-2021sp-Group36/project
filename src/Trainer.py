@@ -27,7 +27,7 @@ class Trainer(object):
         #only optimize parameters that we want to optimize
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
-        self.optimizer = torch.optim.Adam(optim_params, lr=0.01) #TODO: not hardcoded
+        self.optimizer = torch.optim.Adam(optim_params, lr=0.05) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
@@ -180,9 +180,9 @@ if __name__ == "__main__":
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
-    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.01,0.99])
+    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.3,0.7])
     print("create dataloader")
-    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=20, num_workers=0)
+    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
     
     print("create trainer")
     test_trainer = Trainer(model, tsdl, crossval_data)
