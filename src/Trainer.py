@@ -27,7 +27,7 @@ class Trainer(object):
         #only optimize parameters that we want to optimize
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
-        self.optimizer = torch.optim.Adam(optim_params, lr=0.1) #TODO: not hardcoded
+        self.optimizer = torch.optim.Adam(optim_params, lr=0.01) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
@@ -97,6 +97,17 @@ class Trainer(object):
                 epoch_average_batch_loss += float(batch_loss)
                 batchgroup_average_batch_loss += float(batch_loss)
                 #TODO: Add proper logging
+                
+                ## DEBUG: Monitor Norms
+                overall_mean_norms = -1.0
+                if True:
+                    mqn = float(torch.norm(Q_embedding_vectors.detach(),dim=1).mean())
+                    mpn = float(torch.norm(P_embedding_vectors.detach(),dim=1).mean())
+                    mnn = float(torch.norm(N_embedding_vectors.detach(),dim=1).mean())
+                    overall_mean_norms = float((mqn + mpn + mnn)/3.0)
+                    print("mean Q,P,N norms {:.5f} {:.5f} {:.5f} ".format(mqn, mpn, mnn))
+                
+                
                 #DEBUG
                 if self.verbose and 0 == batch_idx % self.batch_log_interval:
                     print("batch ({}) loss {:.5f} time {:.3f} s/item".format(batch_idx,
@@ -104,7 +115,8 @@ class Trainer(object):
                                                             batch_time_per_item)
                         )
                 wandb.log({"batch_loss":float(batch_loss),
-                            "time_per_item":batch_time_per_item
+                            "time_per_item":batch_time_per_item,
+                            "embedding_mean_l2_norm":overall_mean_norms
                             })
                 
                 #CHECKPOINTING (epochs are so long that we need to checkpoitn more freqently)
@@ -168,12 +180,13 @@ if __name__ == "__main__":
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
-    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.9,0.1])
+    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.01,0.99])
     print("create dataloader")
-    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
+    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=20, num_workers=0)
     
     print("create trainer")
     test_trainer = Trainer(model, tsdl, crossval_data)
+    test_trainer.loss_fn = LossFunction.create_loss("normed")
     
     print("Begin training")
     test_trainer.train(100)
