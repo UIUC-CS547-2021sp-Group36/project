@@ -147,7 +147,15 @@ def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",transfor
         #The training dataset is already sized at 64
         transform = T.Compose([T.Resize(64), T.CenterCrop(64), T.ToTensor()])
     
-    loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=is_valid_file)
+    def check_valid(path):
+        try:
+            torchvision.datasets.folder.default_loader(path)
+            return True
+        except:
+            return False
+        return True
+    
+    loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=check_valid)
     return loaded_dataset
 
 def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequence[float]):
