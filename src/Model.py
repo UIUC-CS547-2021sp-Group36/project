@@ -19,7 +19,7 @@ class Resnet18FrozenWrapper(torch.nn.Module):
             torch.nn.Linear(n_resnetout, internal_dimension),
             torch.nn.Sigmoid(),
             torch.nn.Linear(internal_dimension,output_dimension),
-            torch.nn.Sigmoid()
+            torch.nn.Softmax(dim=1)
         )
         
         #FREEZING (search other files)
