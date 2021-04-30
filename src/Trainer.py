@@ -155,17 +155,26 @@ class Trainer(object):
                 
 
 if __name__ == "__main__":
+    import os
     import torch
     import torchvision
     
     #testing
     run_id = wandb.util.generate_id()
+    wandb_tags = ["debug"]
+    if "PBS_JOBID" in os.environ:
+        wandb_tags.append("blue-waters")
+        
+        run_id = os.environ["PBS_JOBID"]
+        if "PBS_ARRAYID" in os.environ:
+            run_id += "_" + os.environ["PBS_ARRAYID"]
+        
     wandb.init(id=run_id,
                 resume="allow",
                 entity='uiuc-cs547-2021sp-group36',
                 project='image_similarity',
                 group="debugging",
-                tags=["debug"])
+                tags=wandb_tags)
     if wandb.run.resumed:
         print("Resuming...")
     
