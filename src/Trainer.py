@@ -28,7 +28,7 @@ class Trainer(object):
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
         self.optimizer = torch.optim.Adam(optim_params, lr=0.1) #TODO: not hardcoded
-        self.learning_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+        self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
         
@@ -37,8 +37,8 @@ class Trainer(object):
         
         #Logging
         self.verbose = verbose #log to terminal too?
-        self.batch_log_interval = 5
-        self.checkpoint_interval = 1 #epochs
+        self.batch_log_interval = 1
+        self.checkpoint_interval = 50 #additional checkpoints in number of batches
     
     def create_checkpoint(self):
         if self.verbose:
@@ -73,8 +73,10 @@ class Trainer(object):
             self.total_epochs += 1
             
             epoch_average_batch_loss = 0.0;
+            batchgroup_average_batch_loss = 0.0;
             
             for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
+                
                 batch_start = time.time() #Throughput measurement
                 
                 self.model.train(True)
@@ -93,16 +95,27 @@ class Trainer(object):
                 batch_time_per_item = float(batch_end-batch_start)/len(l) #Throughput measurement
                 
                 epoch_average_batch_loss += float(batch_loss)
+                batchgroup_average_batch_loss += float(batch_loss)
                 #TODO: Add proper logging
                 #DEBUG
                 if self.verbose and 0 == batch_idx % self.batch_log_interval:
-                    print("batch ({}) loss {} time {}s/item".format(batch_idx,
+                    print("batch ({}) loss {:.5f} time {:.3f} s/item".format(batch_idx,
                                                             float(batch_loss),
                                                             batch_time_per_item)
                         )
                 wandb.log({"batch_loss":float(batch_loss),
                             "time_per_item":batch_time_per_item
                             })
+                
+                #CHECKPOINTING (epochs are so long that we need to checkpoitn more freqently)
+                if 0 != batch_idx and 0 == batch_idx%self.checkpoint_interval:
+                    self.create_checkpoint()
+                
+                #LEARNING SCHEDULE
+                if 0 != batch_idx and 0 == batch_idx%self.lr_interval:
+                    batchgroup_average_batch_loss /= self.lr_interval
+                    self.lr_schedule.step(batchgroup_average_batch_loss)
+                    batchgroup_average_batch_loss = 0.0
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
@@ -112,6 +125,7 @@ class Trainer(object):
             epoch_average_batch_loss /= batch_idx
             wandb.log({"epoch_average_batch_loss":epoch_average_batch_loss
                         })
+            #TODO: log LR for this epoch.
             
             #TODO: any logging
             #TODO: any validation checking, any learning_schedule stuff.
@@ -119,8 +133,9 @@ class Trainer(object):
                 self.model.eval()
                 
                 #TODO: blah. Too slow.
-                self.lr_scheduler.step(epoch_average_batch_loss)
+                #self.lr_schedule.step(epoch_average_batch_loss)
             
+            #Also save a checkpoint after every epoch
             self.create_checkpoint()
                 
 
@@ -150,12 +165,12 @@ if __name__ == "__main__":
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
-    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.2,0.7])
+    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.9,0.1])
     print("create dataloader")
     tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
     
     print("create trainer")
-    test_trainer = Trainer(model, tsdl, None)
+    test_trainer = Trainer(model, tsdl, crossval_data)
     
     print("Begin training")
-    test_trainer.train(10)
+    test_trainer.train(100)
