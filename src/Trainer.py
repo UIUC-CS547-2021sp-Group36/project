@@ -116,6 +116,9 @@ class Trainer(object):
                     batchgroup_average_batch_loss /= self.lr_interval
                     self.lr_schedule.step(batchgroup_average_batch_loss)
                     batchgroup_average_batch_loss = 0.0
+                    
+                    
+                    #Any logging of LR rate
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
