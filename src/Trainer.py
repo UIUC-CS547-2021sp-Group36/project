@@ -40,7 +40,7 @@ class Trainer(object):
             self.total_epochs += 1
             
             for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
-                batch_start = time.time()
+                batch_start = time.time() #Throughput measurement
                 
                 self.model.train(True)
                 self.optimizer.zero_grad()
@@ -54,8 +54,8 @@ class Trainer(object):
                 
                 self.optimizer.step()
                 
-                batch_end = time.time()
-                batch_time_per_item = float(batch_end-batch_start)/len(l)
+                batch_end = time.time() #Throughput measurement
+                batch_time_per_item = float(batch_end-batch_start)/len(l) #Throughput measurement
                 
                 #TODO: Add proper logging
                 #DEBUG
