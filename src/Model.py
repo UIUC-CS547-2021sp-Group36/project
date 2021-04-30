@@ -11,6 +11,8 @@ class Resnet18FrozenWrapper(torch.nn.Module):
         super(Resnet18FrozenWrapper, self).__init__()
         self.resnet = tvmodels.resnet18(pretrained=True)
         
+        #We find the dimensions of the output from resnet
+        #that will be the dimension of the input for the subesquent layer
         n_resnetout = list(self.resnet.children())[-1].out_features
         
         self.additional_layers = torch.nn.Sequential(
@@ -29,13 +31,6 @@ class Resnet18FrozenWrapper(torch.nn.Module):
         rn_embed = self.resnet(images)
         output = self.additional_layers(rn_embed)
         return output
-    
-    ##Doesn't Work
-    #def freeze_resnet(self,freeze=True):
-    #    for p in self.resnet.parameters():
-    #        p.requires_grad = (not freeze)
-    #
-
 
 def create_model(model_name="dummy"):
     if model_name is "resnet18":
