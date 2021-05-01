@@ -67,6 +67,24 @@ class Trainer(object):
         unpickled_trainer = torch.load(model_file)
         return unpickled_trainer
     """
+    def crossval(self):
+        self.model.eval()
+        total_validation_loss = 0.0
+        total_seen = 0
+        for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
+            Q_emb = self.model(Qs).detach()
+            P_emb = self.model(Ps).detach()
+            N_emb = self.model(Ns).detach()
+            
+            total_validation_loss += float(self.accuracy_function(Q_emb, P_emb, N_emb))
+            total_seen += int(len(l))
+        
+        total_validation_loss /= float(total_seen)
+        print("Crossval_error {}".format(total_validation_loss))
+        wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
+        
+        return total_validation_loss
+    
         
     def train(self, n_epochs):
         
@@ -154,20 +172,7 @@ class Trainer(object):
             
             #CROSSVALIDATION
             if None != self.validation_set:
-                self.model.eval()
-                total_validation_loss = 0.0
-                total_seen = 0
-                for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
-                    Q_emb = self.model(Qs).detach()
-                    P_emb = self.model(Ps).detach()
-                    N_emb = self.model(Ns).detach()
-                    
-                    total_validation_loss += float(self.accuracy_function(Q_emb, P_emb, N_emb))
-                    total_seen += int(len(l))
-                
-                total_validation_loss /= float(total_seen)
-                print("Crossval_error {}".format(total_validation_loss))
-                wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
+                self.crossval()
                         
                         
             
