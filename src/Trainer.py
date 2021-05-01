@@ -2,6 +2,7 @@ import time
 import os
 
 import torch
+import torch.nn
 import torch.optim
 
 import wandb
@@ -21,6 +22,7 @@ class Trainer(object):
         self.validation_set = validation_set
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
+        self.accuracy_function = torch.nn.TripletMarginLoss(margin = 0.0,reduction="sum")
         
         #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
@@ -150,6 +152,25 @@ class Trainer(object):
                 #TODO: blah. Too slow.
                 #self.lr_schedule.step(epoch_average_batch_loss)
             
+            #CROSSVALIDATION
+            if None != self.validation_set:
+                self.model.eval()
+                total_validation_loss = 0.0
+                total_seen = 0
+                for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
+                    Q_emb = self.model(Qs).detach()
+                    P_emb = self.model(Ps).detach()
+                    N_emb = self.model(Ns).detach()
+                    
+                    total_validation_loss += float(self.accuracy_function(Q_emb, P_emb, N_emb))
+                    total_seen += int(len(l))
+                
+                total_validation_loss /= float(total_seen)
+                print("Crossval_error {}".format(total_validation_loss))
+                wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
+                        
+                        
+            
             #Also save a checkpoint after every epoch
             self.create_checkpoint()
                 
@@ -161,14 +182,9 @@ if __name__ == "__main__":
     
     #testing
     run_id = wandb.util.generate_id()
+    run_id = "12164540.bw"
+    #TODO: Move to a main script and a bash script outside this program.
     wandb_tags = ["debug"]
-    if "PBS_JOBID" in os.environ:
-        wandb_tags.append("blue-waters")
-        
-        run_id = os.environ["PBS_JOBID"]
-        if "PBS_ARRAYID" in os.environ:
-            run_id += "_" + os.environ["PBS_ARRAYID"]
-        
     wandb.init(id=run_id,
                 resume="allow",
                 entity='uiuc-cs547-2021sp-group36',
@@ -189,12 +205,13 @@ if __name__ == "__main__":
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
-    train_data, crossval_data = ImageLoader.split_imagefolder(all_train, [0.3,0.7])
+    train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, [0.3,0.1,0.6])
     print("create dataloader")
     tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
+    tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=200, num_workers=0,shuffle=False)
     
     print("create trainer")
-    test_trainer = Trainer(model, tsdl, crossval_data)
+    test_trainer = Trainer(model, tsdl, tsdl_crossval)
     test_trainer.loss_fn = LossFunction.create_loss("normed")
     
     print("Begin training")
