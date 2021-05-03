@@ -113,6 +113,15 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
                             shuffle=True,
                             num_workers: int = 0,
                             pin_memory=False):
+        
+        #TODO: Currently using workers causes a memory leak. Fix later.
+        #BUG, WORKAROUND
+        import warnings
+        if num_workers != 0:
+            warnings.warn("TripletSamplingDataLoader: num_workers != 0 causes memory leaks and is currently suppressed.")
+            num_workers = 0
+        #END WORKAROUND
+        
         super(TripletSamplingDataLoader, self).__init__(dataset,
             batch_size=batch_size,
             shuffle=shuffle,
@@ -225,7 +234,7 @@ if __name__ == "__main__":
         
             print(l,i_query, i_pos, i_neg)
         
-    tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=2)
+    tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=0)
     
     if False:
         import torchvision.models as models
@@ -250,7 +259,7 @@ if __name__ == "__main__":
     
     splits = split_imagefolder(all_train,[0.1,0.9])
     
-    tsdl = TripletSamplingDataLoader(splits[0],batch_size=20, num_workers=2)
+    tsdl = TripletSamplingDataLoader(splits[0],batch_size=20, num_workers=0)
     
     #import torchvision.models as models
     #resnet18 = models.resnet18(pretrained=True)

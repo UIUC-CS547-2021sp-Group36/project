@@ -1,5 +1,6 @@
 #!/bin/bash
-#PBS -l walltime=1:30:0,nodes=1:xe:ppn=32,gres=shifter
+#PBS -q debug
+#PBS -l walltime=0:15:0,nodes=1:xe:ppn=32,gres=shifter
 
 cd ${PBS_O_WORKDIR}
 

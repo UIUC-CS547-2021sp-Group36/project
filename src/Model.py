@@ -20,6 +20,7 @@ class Resnet18FrozenWrapper(torch.nn.Module):
             torch.nn.Sigmoid(),
             torch.nn.Linear(internal_dimension,output_dimension),
             torch.nn.Sigmoid()
+            #torch.nn.Softmax(dim=1) #More classifier like
         )
         
         #FREEZING (search other files)
@@ -30,12 +31,18 @@ class Resnet18FrozenWrapper(torch.nn.Module):
     def forward(self, images):
         rn_embed = self.resnet(images)
         output = self.additional_layers(rn_embed)
+        
+        #Normalize output while training
+        #Nevermind, we'll use a loss function to enforce that
+        #if self.training:
+        #    output = torch.nn.functional.normalize(output,dim=1)
+        
         return output
 
 def create_model(model_name="dummy"):
-    if model_name is "resnet18":
+    if "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
-    elif model_name is "dummy":
+    elif "dummy" == model_name:
         return Resnet18FrozenWrapper()
     
     #TODO: Add options for other models as we implement them.
