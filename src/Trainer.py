@@ -209,7 +209,7 @@ if __name__ == "__main__":
     
     
     print("load data")
-    all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
+    all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/")
     train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, [0.3,0.1,0.6])
     print("create dataloader")
     tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
