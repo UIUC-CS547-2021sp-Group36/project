@@ -7,6 +7,8 @@ import torch
 import torch.utils.data
 
 from typing import Sequence
+
+from TinyImageNet import TinyImageNet
 class ImageFolderSubset(torch.utils.data.dataset.Subset):
     """A class that represents a subset of a torchvision.datasets.ImageFolder
     
@@ -149,7 +151,7 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
         
         return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
 
-def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",transform=None,is_valid_file=None):
+def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train",transform=None,is_valid_file=None):
     import torchvision
     from torchvision import datasets, transforms as T
     if transform is None:
@@ -164,7 +166,8 @@ def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",transfor
             return False
         return True
     
-    loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=check_valid)
+    #loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=check_valid)
+    loaded_dataset = TinyImageNet(root=path,split=split,transform=transform,is_valid_file=check_valid)
     return loaded_dataset
 
 def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequence[float]):
@@ -182,12 +185,14 @@ def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequ
         sizes = [int(p*N_label) for p in proportions]
         #Probably does not sum to N_label.
         #May have some groups getting assigned 0 elements.
+        #Make sure to assign unassigned data to those splits first.
         remainder = N_label - sum(sizes)
         for i in range(N_splits):
             if sizes[i] == 0 and remainder > 0:
                 sizes[i]+=1
                 remainder-=1
         
+        #Assign any still unassigned data to a split
         #TODO: Ugly, and surely a closed-form solution exists
         while remainder > 0:
             for i in range(N_splits):
@@ -216,7 +221,7 @@ if __name__ == "__main__":
     
     import torch
     print("load data")
-    all_train = load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
+    all_train = load_imagefolder("/workspace/datasets/tiny-imagenet-200")
     
     
     print("index data")
