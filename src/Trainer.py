@@ -12,7 +12,8 @@ import LossFunction
 import Model
 
 class Trainer(object):
-    def __init__(self, model,
+    def __init__(self,
+            model,
             dataloader:ImageLoader.TripletSamplingDataLoader,
             validation_set:ImageLoader.TripletSamplingDataLoader,
             g=1.0,
@@ -22,7 +23,7 @@ class Trainer(object):
         self.validation_set = validation_set
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
-        self.accuracy_function = torch.nn.TripletMarginLoss(margin = 0.0,reduction="sum")
+        self.accuracy_function = torch.nn.TripletMarginLoss(margin = 0.0,reduction="sum")#TODO: A better accuracy function
         
         #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
@@ -187,7 +188,6 @@ if __name__ == "__main__":
     
     #testing
     run_id = wandb.util.generate_id()
-    run_id = "12164540.bw"
     #TODO: Move to a main script and a bash script outside this program.
     wandb_tags = ["debug"]
     wandb.init(id=run_id,
