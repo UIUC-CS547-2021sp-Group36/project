@@ -39,15 +39,6 @@ class Resnet18FrozenWrapper(torch.nn.Module):
         
         return output
 
-def create_model(model_name="dummy"):
-    if "resnet18" == model_name:
-        return tvmodels.resnet18(pretrained=True)
-    elif "dummy" == model_name:
-        return Resnet18FrozenWrapper()
-    
-    #TODO: Add options for other models as we implement them.
-    
-    raise Exception("No Model Specified")
 
 if __name__ == "__main__":
     import ImageLoader

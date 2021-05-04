@@ -9,7 +9,7 @@ import wandb
 
 import ImageLoader
 import LossFunction
-import Model
+import models
 
 class Trainer(object):
     def __init__(self, model,
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         print("Resuming...")
     
     print("create model")
-    model = Model.create_model("dummy")
+    model = models.create_model("dummy")
     if wandb.run.resumed:
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
