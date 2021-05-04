@@ -37,24 +37,25 @@ def main():
     arg_parser = argparse.ArgumentParser(description='Train an image similarity vector embedding')
     arg_parser.add_argument("--verbose","-v",action="store_true")
     
+    wandb_group = arg_parser.add_argument_group("wandb","Arguments related to Weights and Biases")
+    wandb_group.add_argument("--runname",type=str)
+    wandb_group.add_argument("--resume",action="store_true")
+    wandb_group.add_argument("--wandb-tags",type=str_list,default=[])
     
-    arg_parser.add_argument("--runname",type=str, nargs="+")
-    arg_parser.add_argument("--resume",action="store_true")
-    arg_parser.add_argument("--wandb-tags",type=str_list, nargs="+")
-    
-    arg_parser.add_argument("--dataset","-d",type=str,default="/workspace/datasets/tiny-imagenet-200/")
-    arg_parser.add_argument("--split",type=check_datasplit,default=[0.2,0.05,1.0-0.25])
-    arg_parser.add_argument("--num_workers",type=nonneg_int,default=0)
+    dataset_group = arg_parser.add_argument_group("data")
+    dataset_group.add_argument("--dataset","-d",metavar="TINY_IMAGENET_ROOT_DIRECTORY",type=str,default="/workspace/datasets/tiny-imagenet-200/")
+    dataset_group.add_argument("--split",metavar="TRAIN_PROPORTION,CROSSVAL_PROPORTION",type=check_datasplit,default=[0.2,0.05,1.0-0.25])
+    dataset_group.add_argument("--num_workers",type=nonneg_int,default=0)
     
     arg_parser.add_argument("--model",type=str,default="dummy")
     
+    training_group = arg_parser.add_argument_group("training")
+    training_group.add_argument("--batch-size",type=pos_int,default=200)
+    training_group.add_argument("--epochs",metavar="N_epochs",type=int, nargs=1)
+    training_group.add_argument("--loss",type=str,default="normed")
+    training_group.add_argument("--margin","-g",type=nonneg_float)
     
-    arg_parser.add_argument("--batch-size",type=int,default=200)
-    arg_parser.add_argument("--epochs",metavar="N_epochs",type=int, nargs=1)
     arg_parser.add_argument("--checkpoint","-c",type=int, default=50)
-    
-    arg_parser.add_argument("--loss",type=str,nargs="+",default="normed")
-    arg_parser.add_argument("--margin","-g",type=nonneg_float)
     
     args = arg_parser.parse_args()
     print(args)
