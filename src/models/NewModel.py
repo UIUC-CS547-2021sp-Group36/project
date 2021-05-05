@@ -47,13 +47,16 @@ class NewModel(torch.nn.Module):
 
         merge_embed = torch.cat([first_embed, second_embed], 1)
         merge_norm = merge_embed.norm(p=2, dim=1, keepdim=True)
-        print('Shape after nnorm: ', merge_norm.shape)
+        #DEBUG
+        #print('Shape after nnorm: ', merge_norm.shape)
         merge_embed = merge_embed.div(merge_norm.expand_as(merge_embed))
 
-        print(merge_embed.shape, rn_embed.shape)
+        #DEBUG
+        #print(merge_embed.shape, rn_embed.shape)
 
         final_embed = torch.cat([rn_embed, merge_embed], 1)
-        print(final_embed.shape)
+        #DEBUG
+        #print(final_embed.shape)
         final_embed = self.linearization(final_embed)
         final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
         output = final_embed.div(final_norm.expand_as(final_embed))
