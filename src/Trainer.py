@@ -187,7 +187,7 @@ if __name__ == "__main__":
     
     #testing
     run_id = wandb.util.generate_id()
-    run_id = "12164540.bw"
+    #run_id = "12164540.bw"
     #TODO: Move to a main script and a bash script outside this program.
     wandb_tags = ["debug"]
     wandb.init(id=run_id,
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         print("Resuming...")
     
     print("create model")
-    model = models.create_model("dummy")
+    model = models.create_model("newModel")
     if wandb.run.resumed:
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
