@@ -14,6 +14,7 @@ class NewModel(torch.nn.Module):
         super(NewModel, self).__init__()
 
         self.resnet = tvmodels.resnet18(pretrained=True)
+        self.resnet.requires_grad = False
 
         self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
         self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
