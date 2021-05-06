@@ -68,6 +68,21 @@ class NormedTML(torch.nn.TripletMarginLoss):
         n = torch.nn.functional.normalize(negative)
         
         return super(NormedTML, self).forward(a,p,n)
+        
+class TripletAccuracy(torch.nn.Module):
+    def __init__(self, *args,**kwargs):
+        super(TripletAccuracy,self).__init__()
+        self.pairwise = torch.nn.PairwiseDistance(p=2.0)
+        self.reduction = "mean"
+    
+    def forward(self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor) -> torch.Tensor:
+        
+        dist_q_p = self.pairwise(anchor, positive)
+        dist_q_n = self.pairwise(anchor, negative)
+        differences = torch.lt(dist_q_p, dist_q_n)
+        
+        #TODO: add an option to use sigmoid and be differentiable.
+        return differences.sum()
 
 def create_loss(name="default"):
     #TODO: Handle additional arguments and pass them to the constructor

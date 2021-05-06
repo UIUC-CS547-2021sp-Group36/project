@@ -9,11 +9,10 @@ import wandb
 
 import ImageLoader
 import LossFunction
-import Model
+import models
 
 class Trainer(object):
-    def __init__(self,
-            model,
+    def __init__(self, model,
             dataloader:ImageLoader.TripletSamplingDataLoader,
             validation_set:ImageLoader.TripletSamplingDataLoader,
             g=1.0,
@@ -23,7 +22,7 @@ class Trainer(object):
         self.validation_set = validation_set
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
-        self.accuracy_function = torch.nn.TripletMarginLoss(margin = 0.0,reduction="sum")#TODO: A better accuracy function
+        self.accuracy_function = LossFunction.TripletAccuracy()
         
         #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
@@ -82,7 +81,7 @@ class Trainer(object):
         
         total_validation_loss /= float(total_seen)
         print("Crossval_error {}".format(total_validation_loss))
-        wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
+        wandb.log({"epoch_val_error":1.0 - total_validation_loss},step=wandb.run.step)
         
         return total_validation_loss
     
@@ -188,6 +187,7 @@ if __name__ == "__main__":
     
     #testing
     run_id = wandb.util.generate_id()
+    #run_id = "12164540.bw"
     #TODO: Move to a main script and a bash script outside this program.
     wandb_tags = ["debug"]
     wandb.init(id=run_id,
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         print("Resuming...")
     
     print("create model")
-    model = Model.create_model("dummy")
+    model = models.create_model("newModel")
     if wandb.run.resumed:
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
