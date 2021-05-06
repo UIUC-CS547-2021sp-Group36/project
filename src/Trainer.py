@@ -81,7 +81,7 @@ class Trainer(object):
         
         total_validation_loss /= float(total_seen)
         print("Crossval_error {}".format(total_validation_loss))
-        wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
+        wandb.log({"epoch_val_error":1.0 - total_validation_loss},step=wandb.run.step)
         
         return total_validation_loss
     
