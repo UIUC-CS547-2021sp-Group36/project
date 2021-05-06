@@ -10,8 +10,10 @@ from .NewModel import NewModel
 def create_model(model_name="dummy"):
     if "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
-    elif "newModel" == model_name:
+    elif model_name in ["newModel","NewModel"]:
         return NewModel()
+    elif "LowDNewModel" == model_name:
+        return NewModel(out_features=30)
     elif "dummy" == model_name:
         return Resnet18FrozenWrapper()
 

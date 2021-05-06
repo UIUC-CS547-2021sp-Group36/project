@@ -10,8 +10,10 @@ import torchvision.models as tvmodels
 
 
 class NewModel(torch.nn.Module):
-    def __init__(self):
+    def __init__(self,out_features=1000):
         super(NewModel, self).__init__()
+        
+        self.out_features = out_features
 
         self.resnet = tvmodels.resnet18(pretrained=True)
         self.resnet.requires_grad = False
@@ -24,7 +26,7 @@ class NewModel(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=4, stride=6)
         self.maxpool2 = torch.nn.MaxPool2d(kernel_size=7, padding=3, stride=2)
 
-        self.linearization = torch.nn.Linear(in_features=(1000 + 3264), out_features=1000)
+        self.linearization = torch.nn.Linear(in_features=(1000 + 3264), out_features=self.out_features)
 
 
     def forward(self, images):

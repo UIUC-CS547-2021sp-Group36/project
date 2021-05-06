@@ -29,7 +29,7 @@ class Trainer(object):
         #only optimize parameters that we want to optimize
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
-        self.optimizer = torch.optim.Adam(optim_params, lr=0.05) #TODO: not hardcoded
+        self.optimizer = torch.optim.Adam(optim_params, lr=0.0001) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         print("Resuming...")
     
     print("create model")
-    model = models.create_model("newModel")
+    model = models.create_model("LowDNewModel")
     if wandb.run.resumed:
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
