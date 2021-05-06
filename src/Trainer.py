@@ -22,7 +22,7 @@ class Trainer(object):
         self.validation_set = validation_set
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
-        self.accuracy_function = torch.nn.TripletMarginLoss(margin = 0.0,reduction="sum")
+        self.accuracy_function = LossFunction.TripletAccuracy()
         
         #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
