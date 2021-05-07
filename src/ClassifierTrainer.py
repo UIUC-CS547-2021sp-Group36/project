@@ -63,7 +63,7 @@ class ClassifierTrainer(object):
             g=1.0,
             verbose=True,
             lr=0.0001,
-            weight_decay=0.0001,
+            weight_decay=0.00001,
             n_classes=200):
         self.inner_model = model
         self.model = ClassifierWrapper(self.inner_model,n_classes)
@@ -79,7 +79,7 @@ class ClassifierTrainer(object):
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
         #Optimization
-        self.optimizer = torch.optim.Adam(optim_params, lr=lr, weight_decay=weight_decay) #TODO: not hardcoded
+        self.optimizer = torch.optim.SGD(optim_params, lr=lr, weight_decay=weight_decay) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0

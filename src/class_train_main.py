@@ -28,6 +28,12 @@ def main(args):
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
         model.load_state_dict( torch.load(model_pickle_file.name) )
+    
+    if args.initial_weights is not None:
+        print("Overriding weights with loaded weights")
+        model_pickle_filename = args.initial_weights
+        model.load_state_dict( torch.load(model_pickle_filename) )
+        
     wandb.watch(model, log_freq=100) #Won't work if we restore the full object from pickle. :(
     
     print("load data")
@@ -105,6 +111,7 @@ if __name__ == "__main__":
     
     model_group = arg_parser.add_argument_group("model")
     model_group.add_argument("--model",type=str,default="LowDNewModel")
+    model_group.add_argument("--initial_weights",type=str,default=None)
     
     training_group = arg_parser.add_argument_group("training")
     training_group.add_argument("--epochs",metavar="N_epochs",type=int)

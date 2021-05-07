@@ -21,15 +21,23 @@ def main(args):
                 
     if wandb.run.resumed:
         print("Resuming...")
-        
+    
+    #============= MODEL ============
     print("create model")
     model = models.create_model(args.model)
     if wandb.run.resumed:
         print("Resuming from checkpoint")
         model_pickle_file = wandb.restore("model_state.pt")
         model.load_state_dict( torch.load(model_pickle_file.name) )
+    
+    if args.initial_weights is not None:
+        print("Overriding weights with loaded weights")
+        model_pickle_filename = args.initial_weights
+        model.load_state_dict( torch.load(model_pickle_filename) )
+    
     wandb.watch(model, log_freq=100) #Won't work if we restore the full object from pickle. :(
     
+    #============= DATA ==============
     print("load data")
     all_train = ImageLoader.load_imagefolder(args.dataset)
     train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, args.split)
@@ -37,6 +45,7 @@ def main(args):
     tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=args.batch_size, num_workers=args.num_workers)
     tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=args.batch_size, num_workers=args.num_workers,shuffle=False)
     
+    #=============TRAINER=============
     print("create trainer")
     test_trainer = Trainer.Trainer(model, tsdl, tsdl_crossval,
                                     lr=args.lr, weight_decay=args.weight_decay
@@ -45,6 +54,9 @@ def main(args):
     test_trainer.checkpoint_interval = args.checkpoint
     test_trainer.verbose = args.verbose
     
+    #=================================
+    #============ GO =================
+    #=================================
     print("Begin training")
     if args.epochs is not None and args.epochs >= 0:
         test_trainer.train(args.epochs)
@@ -106,6 +118,7 @@ if __name__ == "__main__":
     
     model_group = arg_parser.add_argument_group("model")
     model_group.add_argument("--model",type=str,default="LowDNewModel")
+    model_group.add_argument("--initial_weights",type=str,default=None)
     
     training_group = arg_parser.add_argument_group("training")
     training_group.add_argument("--epochs",metavar="N_epochs",type=int)
