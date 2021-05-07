@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import numpy
 import torch
@@ -58,18 +59,22 @@ def main():
     
     if args.best_matches is not None:
         with open(args.best_matches,"w") as outfile:
+            #These three lines find the Euclidean distance between all vectors.
             b = numpy.dot(embeddings,embeddings.T)
             d = numpy.diag(b)
             c = numpy.power(d + d.reshape(-1,1) - 2.0*b, 0.5)
-            numpy.fill_diagonal(c,c.max() + 10.0)#prevents becoming own best match.
+            numpy.fill_diagonal(c,c.max() + 10.0)#prevents becoming own best match. #self distance is always 0
             m = c.argmin(1)
             
             #TODO: This only gets the single best match. We need the best several.
             #Can accomplish with argsort.
             
-            for i, (closest, l) in enumerate(zip(m, imfol.targets)):
-                closest_label = imfol.targets[closest]
-                print(l,closest,closest_label,file=outfile)
+            for i, (closest, (query_path, query_label)) in enumerate(zip(m, test_data.samples)):
+                query_filename = os.path.basename(query_path)
+                
+                closest_path, closest_label = test_data.samples[closest]
+                closest_filename = os.path.basename(closest_path)
+                print(query_filename,query_label,closest_filename,closest_label,file=outfile)
     
     
 if __name__ == "__main__":

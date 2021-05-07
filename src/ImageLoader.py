@@ -159,10 +159,15 @@ def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train"
         transform = T.Compose([T.Resize(64), T.CenterCrop(64), T.ToTensor()])
     
     def check_valid(path):
+        if path.rsplit(".",1)[-1] == "txt":
+            #skip .txt files which give bounding boxes.
+            return False
+        
         try:
             torchvision.datasets.folder.default_loader(path)
             return True
         except:
+            print("BAD FILE: {}".format(path))
             return False
         return True
     

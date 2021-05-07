@@ -1,5 +1,5 @@
 import time
-import os
+import os, signal
 
 import torch
 import torch.nn
@@ -29,7 +29,8 @@ class Trainer(object):
         #only optimize parameters that we want to optimize
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
-        self.optimizer = torch.optim.Adam(optim_params, lr=0.0001) #TODO: not hardcoded
+        #Optimization
+        self.optimizer = torch.optim.Adam(optim_params, lr=0.0001, weight_decay=0.0001) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0
@@ -41,6 +42,14 @@ class Trainer(object):
         self.verbose = verbose #log to terminal too?
         self.batch_log_interval = 1
         self.checkpoint_interval = 50 #additional checkpoints in number of batches
+        self.monitor_norms = False
+        
+        #For clean interruption
+        self.running = False
+        self.previous_handler = None
+    
+    def handle_sigint(self, signum, frame):
+        self.running = False
     
     def create_checkpoint(self):
         if self.verbose:
@@ -80,16 +89,34 @@ class Trainer(object):
             total_seen += int(len(l))
         
         total_validation_loss /= float(total_seen)
-        print("Crossval_error {}".format(total_validation_loss))
-        wandb.log({"epoch_val_error":1.0 - total_validation_loss},step=wandb.run.step)
+        total_validation_loss = 1.0 - total_validation_loss
+        
+        if self.verbose:
+            print("Crossval_error {}".format(total_validation_loss))
+        wandb.log({"epoch_val_error":total_validation_loss},step=wandb.run.step)
         
         return total_validation_loss
     
+    def norm_logging(self, q_emb,p_emb,n_emb):
+        mqn = float(torch.norm(q_emb.detach(),dim=1).mean())
+        mpn = float(torch.norm(p_emb.detach(),dim=1).mean())
+        mnn = float(torch.norm(n_emb.detach(),dim=1).mean())
+        overall_mean_norms = float((mqn + mpn + mnn)/3.0)
         
+        if self.verbose:
+            print("mean Q,P,N norms {:.5f} {:.5f} {:.5f} ".format(mqn, mpn, mnn))
+        wandb.log({"embedding_mean_l2_norm":overall_mean_norms},commit=False,step=wandb.run.step)
+        
+        return overal_mean_norms
+    
     def train(self, n_epochs):
-        
+        self.running = True
+        #install signal handler for clean interruption
+        self.previous_handler = signal.signal(signal.SIGINT, self.handle_sigint)
         
         for _ in range(n_epochs):
+            if not self.running:
+                break
             self.total_epochs += 1
             
             epoch_average_batch_loss = 0.0;
@@ -97,7 +124,10 @@ class Trainer(object):
             
             for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
                 
-                batch_start = time.time() #Throughput measurement
+                if not self.running:
+                    break
+                
+                batch_start_time = time.time() #Throughput measurement
                 
                 self.model.train(True)
                 self.optimizer.zero_grad()
@@ -111,33 +141,24 @@ class Trainer(object):
                 
                 self.optimizer.step()
                 
-                batch_end = time.time() #Throughput measurement
-                batch_time_per_item = float(batch_end-batch_start)/len(l) #Throughput measurement
+                batch_loss = float(batch_loss)
                 
+                #cumulative
                 epoch_average_batch_loss += float(batch_loss)
                 batchgroup_average_batch_loss += float(batch_loss)
+                
+                #creates a step
+                wandb.log({"batch_loss":float(batch_loss)},commit=False)
+                #DEBUG LOG loss to terminal #TODO: Can wandb echo to terminal?
+                if self.verbose and 0 == batch_idx % self.batch_log_interval:
+                    print("batch ({}) loss {:.5f}".format(batch_idx,
+                                                            float(batch_loss))
+                        )
                 #TODO: Add proper logging
                 
                 ## DEBUG: Monitor Norms
-                overall_mean_norms = -1.0
-                if True:
-                    mqn = float(torch.norm(Q_embedding_vectors.detach(),dim=1).mean())
-                    mpn = float(torch.norm(P_embedding_vectors.detach(),dim=1).mean())
-                    mnn = float(torch.norm(N_embedding_vectors.detach(),dim=1).mean())
-                    overall_mean_norms = float((mqn + mpn + mnn)/3.0)
-                    print("mean Q,P,N norms {:.5f} {:.5f} {:.5f} ".format(mqn, mpn, mnn))
-                
-                
-                #DEBUG
-                if self.verbose and 0 == batch_idx % self.batch_log_interval:
-                    print("batch ({}) loss {:.5f} time {:.3f} s/item".format(batch_idx,
-                                                            float(batch_loss),
-                                                            batch_time_per_item)
-                        )
-                wandb.log({"batch_loss":float(batch_loss),
-                            "time_per_item":batch_time_per_item,
-                            "embedding_mean_l2_norm":overall_mean_norms
-                            })
+                if self.monitor_norms:
+                    overall_mean_norms = norm_logging(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
                 
                 #CHECKPOINTING (epochs are so long that we need to checkpoitn more freqently)
                 if 0 != batch_idx and 0 == batch_idx%self.checkpoint_interval:
@@ -154,31 +175,42 @@ class Trainer(object):
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
+                batch_end_time = time.time() #Throughput measurement
+                batch_time_per_item = float(batch_end_time-batch_start_time)/len(l) #Throughput measurement
+                #Commit wandb logs for this batch
+                wandb.log({"time_per_item":batch_time_per_item},commit=True, step=wandb.run.step)
+                
+                
             self.model.train(False)
             
             #Until now, this was actually total batch loss
             epoch_average_batch_loss /= batch_idx
             wandb.log({"epoch_average_batch_loss":epoch_average_batch_loss
-                        })
+                        },step=wandb.run.step)
             #TODO: log LR for this epoch.
             
             #TODO: any logging
             #TODO: any validation checking, any learning_schedule stuff.
-            if 0 == self.total_epochs % self.lr_interval:
+            if self.running and 0 == self.total_epochs % self.lr_interval:
                 self.model.eval()
                 
                 #TODO: blah. Too slow.
                 #self.lr_schedule.step(epoch_average_batch_loss)
             
             #CROSSVALIDATION
-            if None != self.validation_set:
+            if self.running and None != self.validation_set:
                 self.crossval()
                         
                         
             
-            #Also save a checkpoint after every epoch
+            #Also save a checkpoint after every epoch and upon cancellation
             self.create_checkpoint()
-                
+        
+        #END of train
+        #restore the previous interrupt handler
+        signal.signal(signal.SIGINT, self.previous_handler)
+        
+        return self.running #should_continue
 
 if __name__ == "__main__":
     import os
@@ -187,7 +219,6 @@ if __name__ == "__main__":
     
     #testing
     run_id = wandb.util.generate_id()
-    #run_id = "12164540.bw"
     #TODO: Move to a main script and a bash script outside this program.
     wandb_tags = ["debug"]
     wandb.init(id=run_id,
@@ -210,10 +241,10 @@ if __name__ == "__main__":
     
     print("load data")
     all_train = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/")
-    train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, [0.3,0.1,0.6])
+    train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, [0.5,0.1,0.1])
     print("create dataloader")
-    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=200, num_workers=0)
-    tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=200, num_workers=0,shuffle=False)
+    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=100, num_workers=0)
+    tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=100, num_workers=0,shuffle=False)
     
     print("create trainer")
     test_trainer = Trainer(model, tsdl, tsdl_crossval)
