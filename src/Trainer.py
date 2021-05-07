@@ -16,7 +16,9 @@ class Trainer(object):
             dataloader:ImageLoader.TripletSamplingDataLoader,
             validation_set:ImageLoader.TripletSamplingDataLoader,
             g=1.0,
-            verbose=True):
+            verbose=True,
+            lr=0.0001,
+            weight_decay=0.0001):
         self.model = model
         self.dataloader = dataloader
         self.validation_set = validation_set
@@ -30,7 +32,7 @@ class Trainer(object):
         optim_params = [p for p in self.model.parameters() if p.requires_grad]
         
         #Optimization
-        self.optimizer = torch.optim.Adam(optim_params, lr=0.0001, weight_decay=0.0001) #TODO: not hardcoded
+        self.optimizer = torch.optim.Adam(optim_params, lr=lr, weight_decay=weight_decay) #TODO: not hardcoded
         self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
         
         self.total_epochs = 0

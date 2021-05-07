@@ -38,7 +38,9 @@ def main(args):
     tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=args.batch_size, num_workers=args.num_workers,shuffle=False)
     
     print("create trainer")
-    test_trainer = Trainer.Trainer(model, tsdl, tsdl_crossval)
+    test_trainer = Trainer.Trainer(model, tsdl, tsdl_crossval,
+                                    lr=args.lr, weight_decay=args.weight_decay
+                                    )
     test_trainer.loss_fn = LossFunction.create_loss(name=args.loss)
     test_trainer.checkpoint_interval = args.checkpoint
     test_trainer.verbose = args.verbose
