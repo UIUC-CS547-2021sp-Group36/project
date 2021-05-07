@@ -16,6 +16,8 @@ def create_model(model_name="dummy"):
         return NewModel(out_features=30)
     elif "dummy" == model_name:
         return Resnet18FrozenWrapper()
+    elif "dummy30" == model_name:
+        return Resnet18FrozenWrapper(output_dimension=30,internal_dimension=150)
 
     #TODO: Add options for other models as we implement them.
 
