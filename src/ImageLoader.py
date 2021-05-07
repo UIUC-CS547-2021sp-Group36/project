@@ -114,7 +114,8 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
                             batch_size=20,
                             shuffle=True,
                             num_workers: int = 0,
-                            pin_memory=False):
+                            pin_memory=False,
+                            collate_fn=None):
         
         #TODO: Currently using workers causes a memory leak. Fix later.
         #BUG, WORKAROUND
@@ -128,7 +129,7 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=num_workers,
-            collate_fn=self.collate_fn,
+            collate_fn=self.collate_fn if collate_fn is None else collate_fn,
             pin_memory=pin_memory)
         self.label_index = ImageFolderLabelIndex(self.dataset)
     
@@ -150,6 +151,37 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
             negative_image_tensor.pin_memory()
         
         return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
+    
+    
+class DebugTripletSamplingDataLoader(TripletSamplingDataLoader):
+    """
+    Subclass only for debugging.
+    """
+    def __init__(self, dataset:torchvision.datasets.ImageFolder,
+                            batch_size=20,
+                            shuffle=True,
+                            num_workers: int = 0):
+        super(DebugTripletSamplingDataLoader, self).__init__(dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            collate_fn=self.collate_fn,
+            pin_memory=False)
+    
+    
+    def collate_fn(self, somedata):
+        #wi = torch.utils.data.get_worker_info()
+        
+        query_tensor = [i[0] for i in somedata]
+        labels = [i[1] for i in somedata]
+        
+        positive_image_indices = [self.label_index.sample_item(label=l) for l in labels]
+        negative_image_indices = [self.label_index.sample_item(exclude=l) for l in labels]
+        
+        positive_image_tensor = [self.dataset[i][0] for i in positive_image_indices]
+        negative_image_tensor = [self.dataset[i][0] for i in negative_image_indices]
+        
+        return (query_tensor, positive_image_tensor, negative_image_tensor), torch.IntTensor(labels).detach(), positive_image_indices, negative_image_indices
 
 def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train",transform=None,is_valid_file=None):
     import torchvision
@@ -172,7 +204,7 @@ def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train"
         return True
     
     #loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=check_valid)
-    loaded_dataset = TinyImageNet(root=path,split=split,transform=transform,is_valid_file=check_valid)
+    loaded_dataset = TinyImageNet(root=path,split=split,transform=transform,is_valid_file=check_valid if is_valid_file is None else is_valid_file)
     return loaded_dataset
 
 def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequence[float]):
@@ -226,7 +258,10 @@ if __name__ == "__main__":
     
     import torch
     print("load data")
-    all_train = load_imagefolder("/workspace/datasets/tiny-imagenet-200")
+    all_train = load_imagefolder("/workspace/datasets/tiny-imagenet-200",
+                                    transform=lambda x:x,
+                                    is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG"
+                                )
     
     
     print("index data")
@@ -263,14 +298,25 @@ if __name__ == "__main__":
             if i == 3:
                 break
     
-    if False:
+    if True:
         subset_test = ImageFolderSubset(all_train,[1,2,3,670])
         print(subset_test.targets)
     
-    splits = split_imagefolder(all_train,[0.1,0.9])
     
-    tsdl = TripletSamplingDataLoader(splits[0],batch_size=20, num_workers=0)
-    
+    #===================== RANDOM SAMPLING =========================
+    if True:
+        print("Tests of random sampling")
+        no_transform_dataset = load_imagefolder("/workspace/datasets/tiny-imagenet-200",
+                                        transform=lambda x:x,
+                                        is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG"
+                                    )
+        
+        splits = split_imagefolder(no_transform_dataset,[0.9,0.1])
+        tsdl = DebugTripletSamplingDataLoader(splits[0],shuffle=False, batch_size=20, num_workers=0)
+        for (q,p,n), l, p_index, n_index in tsdl:
+            for one_l, one_p_index, one_n_index in zip(l,p_index, n_index):
+                assert one_l == tsdl.dataset[one_p_index][1], "Positive labels do not match"
+                assert one_l != tsdl.dataset[one_n_index][1], "Negative labels must not match"
     #import torchvision.models as models
     #resnet18 = models.resnet18(pretrained=True)
     
