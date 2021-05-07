@@ -22,7 +22,7 @@ def main():
     dataset_group.add_argument("--num_workers",type=nonneg_int,default=0)
     
     model_group = arg_parser.add_argument_group("model")
-    model_group.add_argument("--model",type=str,default="newModel")
+    model_group.add_argument("--model",type=str,default="LowDNewModel")
     model_group.add_argument("--weight_file",type=str,required=True)
     
     arg_parser.add_argument("--out",type=str,required=True)
@@ -51,7 +51,9 @@ def main():
     for batch_idx, (imgs, labels) in enumerate(inference_dataloader):
         if batch_idx % 10 == 0:
             print(batch_idx)
-        embeddings.append(model(imgs).detach().numpy())#uses much less memory.
+        some_emb = model(imgs).detach()
+        some_emb = torch.nn.functional.normalize(some_emb).detach()
+        embeddings.append(some_emb.detach().numpy())#uses much less memory.
     
     embeddings = numpy.vstack(embeddings)
     numpy.savetxt(args.out, embeddings)
