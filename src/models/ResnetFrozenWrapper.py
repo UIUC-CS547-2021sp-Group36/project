@@ -6,10 +6,17 @@ import torchvision.models as tvmodels
 
 
 #write models here
-class Resnet101FrozenWrapper(torch.nn.Module):
-    def __init__(self, output_dimension=300,internal_dimension=500):
-        super(Resnet101FrozenWrapper, self).__init__()
-        self.resnet = tvmodels.resnet101(pretrained=True)
+class ResnetFrozenWrapper(torch.nn.Module):
+    def __init__(self, resnet="resnet18", freeze_resnet=True,pretrained=True, out_features=300,internal_dimension=500):
+        super(ResnetFrozenWrapper, self).__init__()
+        self.resnet = None
+        
+        if resnet == "resnet18":
+            self.resnet = tvmodels.resnet18(pretrained=pretrained)
+        elif resnet == "resnet101":
+            self.resnet = tvmodels.resnet101(pretrained=pretrained)
+        else:
+            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
         #We find the dimensions of the output from resnet
         #that will be the dimension of the input for the subesquent layer
@@ -18,7 +25,7 @@ class Resnet101FrozenWrapper(torch.nn.Module):
         self.additional_layers = torch.nn.Sequential(
             torch.nn.Linear(n_resnetout, internal_dimension),
             torch.nn.Sigmoid(),
-            torch.nn.Linear(internal_dimension,output_dimension),
+            torch.nn.Linear(internal_dimension,out_features),
             torch.nn.Sigmoid()
             #torch.nn.Softmax(dim=1) #More classifier like
         )
@@ -26,7 +33,8 @@ class Resnet101FrozenWrapper(torch.nn.Module):
         #FREEZING (search other files)
         #This is supposed to help freeze the submodel, but the optimizer
         #does not respect this alone. It's very sad.
-        self.resnet.requires_grad = False
+        if freeze_resnet:
+            self.resnet.requires_grad = False
 
     def forward(self, images):
         rn_embed = self.resnet(images)
