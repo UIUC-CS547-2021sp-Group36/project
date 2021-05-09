@@ -8,9 +8,9 @@ import torchvision.models as tvmodels
 
 
 
-class NewModel(torch.nn.Module):
+class ThreeEmbModel(torch.nn.Module):
     def __init__(self,resnet= "resnet101", out_features=1000):
-        super(NewModel, self).__init__()
+        super(ThreeEmbModel, self).__init__()
         self.out_features = out_features
 
         self.resnet = None
@@ -35,7 +35,11 @@ class NewModel(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=4, stride=6)
         self.maxpool2 = torch.nn.MaxPool2d(kernel_size=7, padding=3, stride=2)
 
-        self.linearization = torch.nn.Linear(in_features=(1000 + 3264), out_features=self.out_features)
+        self.downsample3 = torch.nn.Upsample(size=15, mode='bilinear')
+        self.conv3 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=4, stride=2)
+        self.maxpool3 = torch.nn.MaxPool2d(kernel_size=7, padding=3, stride=2)
+
+        self.linearization = torch.nn.Linear(in_features=(1000 + 3648), out_features=self.out_features)
 
 
     def forward(self, images):
@@ -56,8 +60,14 @@ class NewModel(torch.nn.Module):
         second_embed = second_embed.reshape(second_embed.size(0), -1)
 
 
+        down_images3 = self.downsample3(images)
+        third_embed = self.conv2(down_images3)
+        third_embed = self.maxpool2(third_embed)
+        third_embed = third_embed.reshape(third_embed.size(0), -1)
 
-        merge_embed = torch.cat([first_embed, second_embed], 1)
+
+
+        merge_embed = torch.cat([first_embed, second_embed, third_embed], 1)
         merge_norm = merge_embed.norm(p=2, dim=1, keepdim=True)
         #DEBUG
         #print('Shape after nnorm: ', merge_norm.shape)
@@ -84,7 +94,7 @@ if __name__ == "__main__":
 
 
 
-    model = NewModel()
+    model = ThreeEmbModel()
 
     #TODO figure out fake batch creation, see pseudocode
 
