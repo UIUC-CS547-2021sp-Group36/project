@@ -118,7 +118,7 @@ if __name__ == "__main__":
     
     a = ImageFolder("/workspace/datasets/tiny-imagenet-200/train")
     
-    tin_train = TinyImageNet("/workspace/datasets/tiny-imagenet-200/","train")
+    tin_train = TinyImageNet("/workspace/datasets/tiny-imagenet-200/","train",is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG")
     for ffn, cls in tin_train.samples:
         _, fn = os.path.split(ffn)
         cls_from_fn = fn.split("_",1)[0]
@@ -126,6 +126,7 @@ if __name__ == "__main__":
     print("passed on train split")
     
     print("testing val split")
+    #tin_val = TinyImageNet("/workspace/datasets/tiny-imagenet-200/","val",is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG")
     tin_val = TinyImageNet("/workspace/datasets/tiny-imagenet-200/","val")
     assert tin_train.classes == tin_val.classes, "Classes don't match"
     assert tin_train.class_to_idx == tin_val.class_to_idx, "Mappings don't match"
