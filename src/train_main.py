@@ -7,7 +7,7 @@ import torch
 import models
 import LossFunction
 import Trainer
-import ImageLoader
+import data.ImageLoader as ImageLoader
 
 def main(args):
     

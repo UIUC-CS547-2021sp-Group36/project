@@ -5,7 +5,7 @@ import numpy
 import torch
 
 import models
-import ImageLoader
+import data.ImageLoader as ImageLoader
 
 def nonneg_int(i):
     ival = int(i)

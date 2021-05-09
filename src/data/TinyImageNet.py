@@ -112,7 +112,7 @@ class TinyImageNet(ImageFolder):
 
 
 if __name__ == "__main__":
-    #import ImageLoader
+    #import data.ImageLoader as ImageLoader
     print("Running tests of TinyImageNet class")
     
     a = ImageFolder("/workspace/datasets/tiny-imagenet-200/train")

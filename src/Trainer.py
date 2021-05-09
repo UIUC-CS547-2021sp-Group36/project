@@ -7,7 +7,7 @@ import torch.optim
 
 import wandb
 
-import ImageLoader
+import data.ImageLoader as ImageLoader
 import LossFunction
 import models
 

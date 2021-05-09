@@ -1,4 +1,4 @@
-import ImageLoader
+import data.ImageLoader as ImageLoader
 
 if __name__ == "__main__":
     

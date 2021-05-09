@@ -7,7 +7,7 @@ import torch
 import models
 import LossFunction
 import ClassifierTrainer
-import ImageLoader
+import data.ImageLoader as ImageLoader
 
 def main(args):
     

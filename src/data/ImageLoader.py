@@ -8,7 +8,8 @@ import torch.utils.data
 
 from typing import Sequence
 
-from TinyImageNet import TinyImageNet
+from .TinyImageNet import TinyImageNet
+
 class ImageFolderSubset(torch.utils.data.dataset.Subset):
     """A class that represents a subset of a torchvision.datasets.ImageFolder
     
