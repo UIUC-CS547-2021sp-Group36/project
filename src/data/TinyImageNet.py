@@ -11,7 +11,9 @@ import torch
 from torchvision.datasets.folder import ImageFolder
 
 class TinyImageNet(ImageFolder):
-    """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
+    """`TinyImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
+    
+    Copied from torchvision sorce and updated.
 
     Args:
         root (string): Root directory of the ImageNet Dataset.
@@ -109,7 +111,6 @@ class TinyImageNet(ImageFolder):
         bb_mapping = {l[0]: l[2:] for l in lines}
         
         return class_mapping, bb_mapping
-
 
 if __name__ == "__main__":
     #import data.ImageLoader as ImageLoader

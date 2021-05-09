@@ -52,7 +52,9 @@ class ImageFolderSubset(torch.utils.data.dataset.Subset):
     
     @property
     def imgs(self):
-        return self.samples()
+        if self.__imgs is None:
+            self.__imgs = [self.dataset.imgs[i] for i in self.indices]
+        return self.__imgs
 
 class ImageFolderLabelIndex(object):
     def __init__(self, dataset:torchvision.datasets.ImageFolder):
@@ -157,6 +159,8 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
 class DebugTripletSamplingDataLoader(TripletSamplingDataLoader):
     """
     Subclass only for debugging.
+    
+    In our case, collate_fn needs to be a member function, so we need this class.
     """
     def __init__(self, dataset:torchvision.datasets.ImageFolder,
                             batch_size=20,
@@ -306,23 +310,46 @@ if __name__ == "__main__":
     
     #===================== RANDOM SAMPLING =========================
     if True:
+        import os
         print("Tests of random sampling")
         test_split_size = 0.9
         test_shuffle = True
         test_batch_size = 20
         test_num_workers = 0
         
+        #Looks like we can't monkey patch the object after creation.
+        #Must monkey patch the class
+        __original_getitem = TinyImageNet.__getitem__
+        def raw_path(self, i):
+            return self.imgs[i]
+        TinyImageNet.__getitem__ = raw_path
+        
         no_transform_dataset = load_imagefolder("/workspace/datasets/tiny-imagenet-200",
                                         transform=lambda x:x,
                                         is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG"
                                     )
         
-        splits = split_imagefolder(no_transform_dataset,[test_split_size,1.0-test_split_size])
-        tsdl = DebugTripletSamplingDataLoader(splits[0],shuffle=test_shuffle, batch_size=test_batch_size, num_workers=test_num_workers)
-        for (q,p,n), l, p_index, n_index in tsdl:
+        data_use_for_test,_ = split_imagefolder(no_transform_dataset,[test_split_size,1.0-test_split_size])
+        
+        tsdl = DebugTripletSamplingDataLoader(data_use_for_test,shuffle=test_shuffle, batch_size=test_batch_size, num_workers=test_num_workers)
+        for (qs,ps,ns), l, p_index, n_index in tsdl:
+            
+            #from the filenames
+            for one_q, one_p, one_n in zip(qs,ps,ns):
+                one_q = os.path.basename(one_q).split("_",1)[0]
+                one_p = os.path.basename(one_p).split("_",1)[0]
+                one_n = os.path.basename(one_n).split("_",1)[0]
+                assert one_q == one_p and one_q != one_n , "The classes of Q and P must match, and those of Q and N must differ"
+                
+                
+            
+            #From the labels
             for one_l, one_p_index, one_n_index in zip(l,p_index, n_index):
                 assert one_l == tsdl.dataset[one_p_index][1], "Positive labels do not match"
                 assert one_l != tsdl.dataset[one_n_index][1], "Negative labels must not match"
+        
+        #UNDO monkey patch
+        TinyImageNet.__getitem__ = __original_getitem
     #import torchvision.models as models
     #resnet18 = models.resnet18(pretrained=True)
     
