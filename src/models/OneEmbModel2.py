@@ -8,9 +8,9 @@ import torchvision.models as tvmodels
 
 
 
-class NewModel(torch.nn.Module):
-    def __init__(self,resnet= "resnet101", out_features=1000):
-        super(NewModel, self).__init__()
+class OneEmbModel2(torch.nn.Module):
+    def __init__(self,resnet= "resnet101",out_features=1000):
+        super(OneEmbModel2, self).__init__()
         self.out_features = out_features
 
         self.resnet = None
@@ -27,15 +27,15 @@ class NewModel(torch.nn.Module):
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
 
-        self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
-        self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
-        self.maxpool1 = torch.nn.MaxPool2d(kernel_size=3, padding=1, stride=4)
 
-        self.downsample2 = torch.nn.Upsample(size=29, mode='bilinear')
-        self.conv2 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=4, stride=6)
+
+        self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=48, kernel_size=8, padding=1, stride=8)
+        self.maxpool1 = torch.nn.MaxPool2d(kernel_size=3, padding=1, stride=4)
+        self.conv2 = torch.nn.Conv2d(in_channels=48, out_channels=500, kernel_size=8, padding=4, stride=4)
         self.maxpool2 = torch.nn.MaxPool2d(kernel_size=7, padding=3, stride=2)
 
-        self.linearization = torch.nn.Linear(in_features=(1000 + 3264), out_features=self.out_features)
+        self.linearization = torch.nn.Linear(in_features=(1000+500), out_features=self.out_features)
+
 
 
     def forward(self, images):
@@ -44,31 +44,22 @@ class NewModel(torch.nn.Module):
         rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
         rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
 
-        down_images1 = self.downsample1(images)
-        first_embed = self.conv1(down_images1)
-        first_embed = self.maxpool1(first_embed)
-        first_embed = first_embed.reshape(first_embed.size(0), -1)
-
-
-        down_images2 = self.downsample2(images)
-        second_embed = self.conv2(down_images2)
-        second_embed = self.maxpool2(second_embed)
-        second_embed = second_embed.reshape(second_embed.size(0), -1)
-
-
-
-        merge_embed = torch.cat([first_embed, second_embed], 1)
-        merge_norm = merge_embed.norm(p=2, dim=1, keepdim=True)
+        embed = self.conv1(images)
+        embed = self.maxpool1(embed)
+        embed = self.conv2(embed)
+        embed = self.maxpool2(embed)
+        embed = embed.reshape(embed.size(0), -1)
         #DEBUG
-        #print('Shape after nnorm: ', merge_norm.shape)
-        merge_embed = merge_embed.div(merge_norm.expand_as(merge_embed))
+        print('shape after reshaping: ', embed.shape)
+        embed_norm = embed.norm(p=2, dim=1, keepdim=True)
+        embed = embed.div(embed_norm.expand_as(embed))
 
-        #DEBUG
-        #print(merge_embed.shape, rn_embed.shape)
+        print('shape after norm: ', embed.shape)
 
-        final_embed = torch.cat([rn_embed, merge_embed], 1)
+        final_embed = torch.cat([rn_embed, embed], 1)
         #DEBUG
-        #print(final_embed.shape)
+        print('Embed after concatenating: ', final_embed.shape)
+
         final_embed = self.linearization(final_embed)
         final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
         output = final_embed.div(final_norm.expand_as(final_embed))
@@ -84,7 +75,7 @@ if __name__ == "__main__":
 
 
 
-    model = NewModel()
+    model = OneEmbModel2()
 
     #TODO figure out fake batch creation, see pseudocode
 
