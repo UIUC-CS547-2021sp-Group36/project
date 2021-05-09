@@ -307,13 +307,18 @@ if __name__ == "__main__":
     #===================== RANDOM SAMPLING =========================
     if True:
         print("Tests of random sampling")
+        test_split_size = 0.9
+        test_shuffle = True
+        test_batch_size = 20
+        test_num_workers = 0
+        
         no_transform_dataset = load_imagefolder("/workspace/datasets/tiny-imagenet-200",
                                         transform=lambda x:x,
                                         is_valid_file=lambda x: x.rsplit(".",1)[-1] == "JPEG"
                                     )
         
-        splits = split_imagefolder(no_transform_dataset,[0.9,0.1])
-        tsdl = DebugTripletSamplingDataLoader(splits[0],shuffle=False, batch_size=20, num_workers=0)
+        splits = split_imagefolder(no_transform_dataset,[test_split_size,1.0-test_split_size])
+        tsdl = DebugTripletSamplingDataLoader(splits[0],shuffle=test_shuffle, batch_size=test_batch_size, num_workers=test_num_workers)
         for (q,p,n), l, p_index, n_index in tsdl:
             for one_l, one_p_index, one_n_index in zip(l,p_index, n_index):
                 assert one_l == tsdl.dataset[one_p_index][1], "Positive labels do not match"
