@@ -14,4 +14,4 @@ export OMP_NUM_THREADS=32
 aprun -b -n 1 -d 32  -- shifter --image=docker:luntlab/cs547_project:latest \
     --module=mpich,gpu -- python src/train_main.py -v \
     ${RESUME_ARGS} \
-    --wandb_tags debug --model LowDNewModel --epochs 1000
+    --wandb_tags debug,bw --model LowDNewModel --epochs 1000
