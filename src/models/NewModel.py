@@ -1,4 +1,3 @@
-#This is just initial experiment code for now.
 import torchvision as tv
 import torch
 import torch.nn as nn
@@ -10,12 +9,23 @@ import torchvision.models as tvmodels
 
 
 class NewModel(torch.nn.Module):
-    def __init__(self,out_features=1000):
+    def __init__(self,resnet= "resnet101", out_features=1000):
         super(NewModel, self).__init__()
-        
         self.out_features = out_features
 
-        self.resnet = tvmodels.resnet18(pretrained=True)
+        self.resnet = None
+
+        if resnet == "resnet18":
+            self.resnet = tvmodels.resnet18(pretrained=pretrained)
+        elif resnet == "resnet50":
+            self.resnet = tvmodels.resnet50(pretrained=pretrained)
+        elif resnet == "resnet101":
+            self.resnet = tvmodels.resnet101(pretrained=True)
+        elif resnet == "resnet152":
+            self.resnet = tvmodels.resnet152(pretrained=pretrained)
+        else:
+            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
+
 
         self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
         self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
@@ -31,8 +41,8 @@ class NewModel(torch.nn.Module):
     def forward(self, images):
 
         rn_embed = self.resnet(images)
-        norm = rn_embed.norm(p=2, dim=1, keepdim=True)
-        second_input = rn_embed.div(norm.expand_as(rn_embed))
+        rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
+        rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
 
         down_images1 = self.downsample1(images)
         first_embed = self.conv1(down_images1)
