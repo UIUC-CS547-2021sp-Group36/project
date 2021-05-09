@@ -6,6 +6,9 @@ import torchvision.models as tvmodels
 
 from .ResnetFrozenWrapper import ResnetFrozenWrapper
 from .NewModel import NewModel
+from .OneEmbModel import OneEmbModel
+from .OneEmbModel2 import OneEmbModel2
+from .ThreeEmbModel import ThreeEmbModel
 
 def create_model(model_name="dummy"):
     if "resnet18" == model_name:
