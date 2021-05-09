@@ -6,10 +6,17 @@ import torchvision.models as tvmodels
 
 from .ResnetFrozenWrapper import ResnetFrozenWrapper
 from .NewModel import NewModel
+from .OneEmbModel import OneEmbModel
+from .OneEmbModel2 import OneEmbModel2
+from .ThreeEmbModel import ThreeEmbModel
 
 def create_model(model_name="dummy"):
     if "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
+    elif "resnet34" == model_name:
+        return tvmodels.resnet50(pretrained=True)
+    elif "resnet50" == model_name:
+        return tvmodels.resnet50(pretrained=True)
     elif model_name in ["newModel","NewModel"]:
         return NewModel()
     elif "paper_resnet18" == model_name:
@@ -44,13 +51,13 @@ def create_model(model_name="dummy"):
         return ThreeEmbModel(resnet="resnet101", out_features=100)
     elif "ThreeEmbModel_resnet152" == model_name:
         return ThreeEmbModel(resnet="resnet152", out_features=100)
-    elif model_name in ["dummy", "resnet18"]:
+    elif model_name in ["dummy", "Frozen_resnet18"]:
         return ResnetFrozenWrapper(resnet="resnet18")
-    elif model_name in ["dummy30", "resnet18_30"]:
+    elif model_name in ["dummy30", "Frozen_resnet18_30"]:
         return ResnetFrozenWrapper(resnet="resnet18",out_features=30,internal_dimension=150)
-    elif "resnet101" == model_name:
+    elif "Frozen_resnet101" == model_name:
         return ResnetFrozenWrapper(resnet="resnet101")
-    elif "resnet101_30" == model_name:
+    elif "Frozen_resnet101_30" == model_name:
         return ResnetFrozenWrapper(resnet="resnet101",out_features=30,internal_dimension=150)
 
     #TODO: Add options for other models as we implement them.

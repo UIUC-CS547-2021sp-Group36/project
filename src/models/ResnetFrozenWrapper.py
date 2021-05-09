@@ -13,8 +13,12 @@ class ResnetFrozenWrapper(torch.nn.Module):
         
         if resnet == "resnet18":
             self.resnet = tvmodels.resnet18(pretrained=pretrained)
+        elif resnet == "resnet50":
+            self.resnet = tvmodels.resnet50(pretrained=pretrained)
         elif resnet == "resnet101":
             self.resnet = tvmodels.resnet101(pretrained=pretrained)
+        elif resnet == "resnet152":
+            self.resnet = tvmodels.resnet152(pretrained=pretrained)
         else:
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 

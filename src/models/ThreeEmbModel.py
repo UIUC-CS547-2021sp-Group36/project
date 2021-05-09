@@ -9,7 +9,7 @@ import torchvision.models as tvmodels
 
 
 class ThreeEmbModel(torch.nn.Module):
-    def __init__(self,resnet= "resnet101", out_features=1000):
+    def __init__(self,resnet= "resnet101", out_features=1000, pretrained=True):
         super(ThreeEmbModel, self).__init__()
         self.out_features = out_features
 
@@ -20,7 +20,7 @@ class ThreeEmbModel(torch.nn.Module):
         elif resnet == "resnet50":
             self.resnet = tvmodels.resnet50(pretrained=pretrained)
         elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=True)
+            self.resnet = tvmodels.resnet101(pretrained=pretrained)
         elif resnet == "resnet152":
             self.resnet = tvmodels.resnet152(pretrained=pretrained)
         else:
