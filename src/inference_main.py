@@ -59,12 +59,14 @@ def main():
     print("creating and loading model")
     model = models.create_model(args.model)
     if args.weight_file is not None:
-        model.load_state_dict( torch.load(args.weight_file) )
+        model.load_state_dict( torch.load(args.weight_file,map_location=torch.device("cpu")) )
     else:
         print("Warning, no weights loded. Predicting with default/initial weights.")
     
     print("Loading dataset")
+    #load the crossval split of TinyImageNet (which we are using as a test split)
     test_data = ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/",split="val")
+    #load from the training data.
     #test_data = ImageLoader.ImageFolderSubset(ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/"),list(range(1,100000,100)))
     
     inference_dataloader = torch.utils.data.DataLoader(test_data,shuffle=False,batch_size=200,num_workers=args.num_workers)
