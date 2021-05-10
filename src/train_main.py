@@ -16,6 +16,7 @@ def main(args):
     #TODO: Dependent upon cuda availability
     use_cuda = False
     if torch.cuda.is_available():
+        print("CUDA is available, so we're going to try to use that!")
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
         use_cuda = True
     
