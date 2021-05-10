@@ -113,6 +113,26 @@ class ImageFolderLabelIndex(object):
         
 
 class TripletSamplingDataLoader(torch.utils.data.DataLoader):
+    class Batch(object):
+        """
+        This custom batch object makes it possible to know how long the batch is without knowing about its contents
+        """
+        def __init__(self, X, Y,lenhint=None):
+            self.X = X
+            self.Y = Y
+            self.length = lenhint if lenhint is not None else len(Y)
+        
+        def __getitem__(self,i):
+            if i == 0:
+                return self.X
+            if i == 1:
+                return self.Y
+            else:
+                raise IndexError("index out of bounds")
+        
+        def __len__(self):
+            return self.length
+    
     def __init__(self, dataset:torchvision.datasets.ImageFolder,
                             batch_size=20,
                             shuffle=True,
@@ -158,7 +178,7 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
             positive_image_tensor.pin_memory()
             negative_image_tensor.pin_memory()
         
-        return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
+        return self.Batch((query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach())
     
 def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train",transform=None,is_valid_file=None):
     import torchvision

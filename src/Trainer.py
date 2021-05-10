@@ -113,6 +113,24 @@ class Trainer(object):
         
         return overal_mean_norms
     
+    def train_one_batch(self, one_batch,batch_idx=None):
+        ((Qs,Ps,Ns),l) = one_batch
+        
+        Q_embedding_vectors = self.model(Qs)
+        P_embedding_vectors = self.model(Ps)
+        N_embedding_vectors = self.model(Ns)
+        
+        batch_loss = self.loss_fn(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
+        batch_loss.backward()
+        
+        batch_loss = float(batch_loss)
+        
+        ## DEBUG: Monitor Norms
+        if self.monitor_norms:
+            overall_mean_norms = norm_logging(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
+        
+        return batch_loss
+    
     def train(self, n_epochs):
         self.running = True
         #install signal handler for clean interruption
@@ -124,34 +142,25 @@ class Trainer(object):
                 break
             self.total_epochs += 1
             
-            n_data_so_far = 0
-            
             epoch_average_batch_loss = 0.0;
             batchgroup_average_batch_loss = 0.0;
             
-            for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
+            for batch_idx, one_batch in enumerate(self.dataloader):
                 
                 #clean stopping on signal
                 if not self.running:
                     break
                 
-                n_data_so_far += len(l)
-                
                 batch_start_time = time.time() #Throughput measurement
                 
+                #======ONE TRAINING STEP =========
                 self.model.train(True)
                 self.optimizer.zero_grad()
                 
-                Q_embedding_vectors = self.model(Qs)
-                P_embedding_vectors = self.model(Ps)
-                N_embedding_vectors = self.model(Ns)
-                
-                batch_loss = self.loss_fn(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
-                batch_loss.backward()
+                batch_loss = self.train_one_batch(one_batch,batch_idx)
                 
                 self.optimizer.step()
-                
-                batch_loss = float(batch_loss)
+                #=====TRAINING STEP DONE, SOME LOGGIN AND THINGS======
                 
                 #cumulative
                 epoch_average_batch_loss += float(batch_loss)
@@ -166,9 +175,6 @@ class Trainer(object):
                         )
                 #TODO: Add proper logging
                 
-                ## DEBUG: Monitor Norms
-                if self.monitor_norms:
-                    overall_mean_norms = norm_logging(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
                 
                 #CHECKPOINTING (epochs are so long that we need to checkpoitn more freqently)
                 if 0 != batch_idx and 0 == batch_idx%self.checkpoint_interval:
@@ -186,7 +192,7 @@ class Trainer(object):
                 #TODO: Any per-batch logging
                 #END of loop over batches
                 batch_end_time = time.time() #Throughput measurement
-                batch_time_per_item = float(batch_end_time-batch_start_time)/len(l) #Throughput measurement
+                batch_time_per_item = float(batch_end_time-batch_start_time)/len(one_batch) #Throughput measurement
                 #Commit wandb logs for this batch
                 wandb.log({"time_per_item":batch_time_per_item},commit=True, step=wandb.run.step)
                 

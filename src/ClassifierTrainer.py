@@ -56,7 +56,7 @@ class ClassifierWrapper(torch.nn.Module):
                     of = candidate_of
         return of
 
-class ClassifierTrainer(object):
+class ClassifierTrainer(Trainer):
     def __init__(self, model,
             dataloader,
             validation_set,
@@ -65,41 +65,33 @@ class ClassifierTrainer(object):
             lr=0.0001,
             weight_decay=0.00001,
             n_classes=200):
+        
+        super(ClassifierTrainer,self).__init__(model,
+                        dataloader,
+                        validation_set,
+                        g=g,
+                        verbose=verbose,
+                        lr=lr,weight_decay=weight_decay,
+                                            )
+        
         self.inner_model = model
         self.model = ClassifierWrapper(self.inner_model,n_classes)
-        self.dataloader = dataloader
-        self.validation_set = validation_set
-        self.g = g
+        
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.accuracy_function = ClassifierAccuracy()
         
-        #FREEZING (search other files.)
-        #This should really be done automatically in the optimizer. Not thrilled with this.
-        #only optimize parameters that we want to optimize
-        optim_params = [p for p in self.model.parameters() if p.requires_grad]
+    def train_one_batch(self, one_batch, batch_idx=None):
+        (Xs,l) = one_batch
         
-        #Optimization
-        self.optimizer = torch.optim.SGD(optim_params, lr=lr, weight_decay=weight_decay) #TODO: not hardcoded
-        self.lr_schedule = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+        y_hat = self.model(Xs)
+        batch_loss = self.loss_fn(y_hat, l)
         
-        self.total_epochs = 0
+        batch_loss.backward()
         
-        #Various intervals
-        self.lr_interval = 10
+        return float(batch_loss)
         
-        #Logging
-        self.verbose = verbose #log to terminal too?
-        self.batch_log_interval = 1
-        self.checkpoint_interval = 50 #additional checkpoints in number of batches
-        self.monitor_norms = False
         
-        #For clean interruption
-        self.running = False
-        self.previous_handler = None
-    
-    def handle_sigint(self, signum, frame):
-        self.running = False
-    
+        
     def create_checkpoint(self):
         if self.verbose:
             print("Creating checkpoint")
@@ -148,106 +140,6 @@ class ClassifierTrainer(object):
         
         return total_validation_loss
     
-    def train(self, n_epochs):
-        self.running = True
-        #install signal handler for clean interruption
-        self.previous_handler = signal.signal(signal.SIGINT, self.handle_sigint)
-        
-        for _ in range(n_epochs):
-            if not self.running:
-                break
-            self.total_epochs += 1
-            
-            epoch_average_batch_loss = 0.0;
-            batchgroup_average_batch_loss = 0.0;
-            
-            for batch_idx, (Qs,l) in enumerate(self.dataloader):
-                
-                if not self.running:
-                    break
-                
-                batch_start_time = time.time() #Throughput measurement
-                
-                self.model.train(True)
-                self.optimizer.zero_grad()
-                
-                y_hat = self.model(Qs)
-                
-                batch_loss = self.loss_fn(y_hat, l)
-                batch_loss.backward()
-                
-                self.optimizer.step()
-                
-                batch_loss = float(batch_loss)
-                
-                #cumulative
-                epoch_average_batch_loss += float(batch_loss)
-                batchgroup_average_batch_loss += float(batch_loss)
-                
-                #creates a step
-                wandb.log({"batch_loss":float(batch_loss)},commit=False)
-                #DEBUG LOG loss to terminal #TODO: Can wandb echo to terminal?
-                if self.verbose and 0 == batch_idx % self.batch_log_interval:
-                    print("batch ({}) loss {:.5f}".format(batch_idx,
-                                                            float(batch_loss))
-                        )
-                #TODO: Add proper logging
-                
-                ## DEBUG: Monitor Norms
-                if self.monitor_norms:
-                    overall_mean_norms = norm_logging(Q_embedding_vectors, P_embedding_vectors, N_embedding_vectors)
-                
-                #CHECKPOINTING (epochs are so long that we need to checkpoitn more freqently)
-                if 0 != batch_idx and 0 == batch_idx%self.checkpoint_interval:
-                    self.create_checkpoint()
-                
-                #LEARNING SCHEDULE
-                if 0 != batch_idx and 0 == batch_idx%self.lr_interval:
-                    batchgroup_average_batch_loss /= self.lr_interval
-                    self.lr_schedule.step(batchgroup_average_batch_loss)
-                    batchgroup_average_batch_loss = 0.0
-                    
-                    
-                    #Any logging of LR rate
-                
-                #TODO: Any per-batch logging
-                #END of loop over batches
-                batch_end_time = time.time() #Throughput measurement
-                batch_time_per_item = float(batch_end_time-batch_start_time)/len(l) #Throughput measurement
-                #Commit wandb logs for this batch
-                wandb.log({"time_per_item":batch_time_per_item},commit=True, step=wandb.run.step)
-                
-                
-            self.model.train(False)
-            
-            #Until now, this was actually total batch loss
-            epoch_average_batch_loss /= batch_idx
-            wandb.log({"epoch_average_batch_loss":epoch_average_batch_loss
-                        },step=wandb.run.step)
-            #TODO: log LR for this epoch.
-            
-            #TODO: any logging
-            #TODO: any validation checking, any learning_schedule stuff.
-            if self.running and 0 == self.total_epochs % self.lr_interval:
-                self.model.eval()
-                
-                #TODO: blah. Too slow.
-                #self.lr_schedule.step(epoch_average_batch_loss)
-            
-            #CROSSVALIDATION
-            if self.running and None != self.validation_set:
-                self.crossval()
-                        
-                        
-            
-            #Also save a checkpoint after every epoch and upon cancellation
-            self.create_checkpoint()
-        
-        #END of train
-        #restore the previous interrupt handler
-        signal.signal(signal.SIGINT, self.previous_handler)
-        
-        return self.running #should_continue
 
 if __name__ == "__main__":
     import os
