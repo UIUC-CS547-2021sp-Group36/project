@@ -9,6 +9,9 @@ from .NewModel import NewModel
 from .OneEmbModel import OneEmbModel
 from .OneEmbModel2 import OneEmbModel2
 from .ThreeEmbModel import ThreeEmbModel
+from .RescaleResnet import RescaleResnet
+
+
 from .ArkinDharawat_deep_rank_net import DeepRank
 
 def create_model(model_name="dummy"):
@@ -16,10 +19,14 @@ def create_model(model_name="dummy"):
         return DeepRank()
     elif "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
+    elif "rescaled_resnet18" == model_name:
+        return RescaleResnet("resnet18",pretrained=True)
     elif "resnet34" == model_name:
         return tvmodels.resnet50(pretrained=True)
     elif "resnet50" == model_name:
         return tvmodels.resnet50(pretrained=True)
+    elif "resnet101" == model_name:
+        return tvmodels.resnet101(pretrained=True)
     elif model_name in ["newModel","NewModel"]:
         return NewModel()
     elif "paper_resnet18" == model_name:
