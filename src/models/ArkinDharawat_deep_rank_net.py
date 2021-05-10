@@ -49,7 +49,7 @@ class DeepRank(nn.Module):
                                      stride=32)  # 2nd sub sampling
         self.maxpool2 = torch.nn.MaxPool2d(kernel_size=7, stride=2, padding=3)
 
-        self.dense_layer = torch.nn.Linear(in_features=(4096 + 3072), out_features=4096)
+        self.dense_layer = torch.nn.Linear(in_features=(4096 + 480), out_features=4096)
 
     def forward(self, X):
         conv_input = self.conv_model(X)
