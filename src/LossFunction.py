@@ -73,7 +73,7 @@ class TripletAccuracy(torch.nn.Module):
     def __init__(self, *args,**kwargs):
         super(TripletAccuracy,self).__init__()
         self.pairwise = torch.nn.PairwiseDistance(p=2.0)
-        self.reduction = "mean"
+        self.reduction = "sum"
     
     def forward(self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor) -> torch.Tensor:
         

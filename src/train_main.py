@@ -9,6 +9,8 @@ import LossFunction
 import Trainer
 import data.ImageLoader as ImageLoader
 
+import training.samplers as training_samplers
+
 def main(args):
     
     wandb.init(id=args.run_id if args.run_id is not None else wandb.util.generate_id(),
@@ -41,9 +43,27 @@ def main(args):
     print("load data")
     all_train = ImageLoader.load_imagefolder(args.dataset)
     train_data, crossval_data, _ = ImageLoader.split_imagefolder(all_train, args.split)
+    
     print("create dataloader")
-    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,batch_size=args.batch_size, num_workers=args.num_workers)
-    tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,batch_size=args.batch_size, num_workers=args.num_workers,shuffle=False)
+    
+    #Subepochs
+    train_dl_sampler = None
+    train_dl_shuffle = True
+    if args.subepoch_size is not None and args.subepoch_size > 0:
+        train_dl_shuffle = None
+        train_dl_sampler  = training_samplers.SubepochSampler(
+                                    torch.utils.data.RandomSampler(train_data),
+                                    args.subepoch_size)
+    
+    tsdl = ImageLoader.TripletSamplingDataLoader(train_data,
+                                        shuffle=train_dl_shuffle,
+                                        sampler=train_dl_sampler,
+                                        batch_size=args.batch_size,
+                                        num_workers=args.num_workers)
+    tsdl_crossval = ImageLoader.TripletSamplingDataLoader(crossval_data,
+                                        shuffle=False,
+                                        batch_size=args.batch_size,
+                                        num_workers=args.num_workers)
     
     #=============TRAINER=============
     print("create trainer")
@@ -122,8 +142,9 @@ if __name__ == "__main__":
     
     training_group = arg_parser.add_argument_group("training")
     training_group.add_argument("--epochs",metavar="N_epochs",type=int)
+    training_group.add_argument("--subepoch_size",metavar="N_samples",type=int,default=None,help="The trainer will consier it an epoch once it sees N_samples data, regardless of batch size.")
     training_group.add_argument("--batch_size",type=pos_int,default=200)
-    training_group.add_argument("--checkpoint","-c",type=int, default=50)
+    training_group.add_argument("--checkpoint","-c",type=int, default=50,help="Interval for extra checkpoints if doing very long epochs. Being depricated.")
     
     training_alg_group = arg_parser.add_argument_group("training_alg")
     training_alg_group.add_argument("--optimizer",type=str,choices=["Adam"],default="Adam")

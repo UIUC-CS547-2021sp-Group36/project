@@ -19,6 +19,8 @@ class Trainer(object):
             verbose=True,
             lr=0.0001,
             weight_decay=0.0001):
+        """
+        """
         self.model = model
         self.dataloader = dataloader
         self.validation_set = validation_set
@@ -117,17 +119,23 @@ class Trainer(object):
         self.previous_handler = signal.signal(signal.SIGINT, self.handle_sigint)
         
         for _ in range(n_epochs):
+            #clean stoppign on signal
             if not self.running:
                 break
             self.total_epochs += 1
+            
+            n_data_so_far = 0
             
             epoch_average_batch_loss = 0.0;
             batchgroup_average_batch_loss = 0.0;
             
             for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.dataloader):
                 
+                #clean stopping on signal
                 if not self.running:
                     break
+                
+                n_data_so_far += len(l)
                 
                 batch_start_time = time.time() #Throughput measurement
                 
@@ -218,6 +226,9 @@ if __name__ == "__main__":
     import os
     import torch
     import torchvision
+    
+    import warnings
+    warnings.warning("Training entrypoint has moved to train_main.py")
     
     #testing
     run_id = wandb.util.generate_id()

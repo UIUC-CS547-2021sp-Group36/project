@@ -118,7 +118,8 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
                             shuffle=True,
                             num_workers: int = 0,
                             pin_memory=False,
-                            collate_fn=None):
+                            collate_fn=None,
+                            sampler=None):
         
         #TODO: Currently using workers causes a memory leak. Fix later.
         #BUG, WORKAROUND
@@ -128,8 +129,12 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
             num_workers = 0
         #END WORKAROUND
         
+        if sampler is not None:
+            shuffle=False
+        
         super(TripletSamplingDataLoader, self).__init__(dataset,
             batch_size=batch_size,
+            sampler=sampler,
             shuffle=shuffle,
             num_workers=num_workers,
             collate_fn=self.collate_fn if collate_fn is None else collate_fn,
