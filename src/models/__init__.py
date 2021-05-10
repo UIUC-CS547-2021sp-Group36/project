@@ -9,9 +9,12 @@ from .NewModel import NewModel
 from .OneEmbModel import OneEmbModel
 from .OneEmbModel2 import OneEmbModel2
 from .ThreeEmbModel import ThreeEmbModel
+from .ArkinDharawat_deep_rank_net import DeepRank
 
 def create_model(model_name="dummy"):
-    if "resnet18" == model_name:
+    if "DeepRank" == model_name:
+        return DeepRank()
+    elif "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
     elif "resnet34" == model_name:
         return tvmodels.resnet50(pretrained=True)
