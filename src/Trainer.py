@@ -129,6 +129,10 @@ class Trainer(object):
     def train_one_batch(self, one_batch,batch_idx=None):
         ((Qs,Ps,Ns),l) = one_batch
         
+        Qs = Qs.to(self.model.device)
+        Ps = Ps.to(self.model.device)
+        Ns = Ns.to(self.model.device)
+        
         Q_embedding_vectors = self.model(Qs)
         P_embedding_vectors = self.model(Ps)
         N_embedding_vectors = self.model(Ns)
@@ -207,6 +211,8 @@ class Trainer(object):
                 batch_end_time = time.time() #Throughput measurement
                 batch_time_per_item = float(batch_end_time-batch_start_time)/len(one_batch) #Throughput measurement
                 #Commit wandb logs for this batch
+                if self.verbose:
+                    print("time per item: {}".format(batch_time_per_item))
                 wandb.log({"time_per_item":batch_time_per_item},commit=True, step=wandb.run.step)
                 
                 

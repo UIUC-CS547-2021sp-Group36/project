@@ -13,6 +13,12 @@ import training.samplers as training_samplers
 
 def main(args):
     
+    #TODO: Dependent upon cuda availability
+    use_cuda = False
+    if torch.cuda.is_available():
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        use_cuda = True
+    
     wandb.init(id=args.run_id if args.run_id is not None else wandb.util.generate_id(),
                 resume=args.resume,
                 entity='uiuc-cs547-2021sp-group36',
@@ -36,6 +42,9 @@ def main(args):
         print("Overriding weights with loaded weights")
         model_pickle_filename = args.initial_weights
         model.load_state_dict( torch.load(model_pickle_filename) )
+        
+    if use_cuda:
+        model = model.to("cuda:0")
     
     wandb.watch(model, log_freq=100) #Won't work if we restore the full object from pickle. :(
     
@@ -71,6 +80,10 @@ def main(args):
                                     lr=args.lr, weight_decay=args.weight_decay
                                     )
     test_trainer.loss_fn = LossFunction.create_loss(name=args.loss)
+    if use_cuda:
+        test_trainer.loss_fn = test_trainer.loss_fn.to("cuda:0")
+    
+    
     test_trainer.checkpoint_interval = args.checkpoint
     test_trainer.verbose = args.verbose
     
