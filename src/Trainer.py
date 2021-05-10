@@ -18,7 +18,8 @@ class Trainer(object):
             g=1.0,
             verbose=True,
             lr=0.0001,
-            weight_decay=0.0001):
+            weight_decay=0.0001,
+            device=None):
         """
         """
         self.model = model
@@ -27,6 +28,8 @@ class Trainer(object):
         self.g = g
         self.loss_fn = LossFunction.LossFunction(self.g)
         self.accuracy_function = LossFunction.TripletAccuracy()
+        
+        self.device = device
         
         #FREEZING (search other files.)
         #This should really be done automatically in the optimizer. Not thrilled with this.
@@ -85,6 +88,12 @@ class Trainer(object):
         total_validation_loss = 0.0
         total_seen = 0
         for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
+            
+            if self.device is not None:
+                Qs = Qs.to(self.device)
+                Ps = Ps.to(self.device)
+                Ns = Ns.to(self.device)
+            
             Q_emb = self.model(Qs).detach()
             P_emb = self.model(Ps).detach()
             N_emb = self.model(Ns).detach()
@@ -129,9 +138,10 @@ class Trainer(object):
     def train_one_batch(self, one_batch,batch_idx=None):
         ((Qs,Ps,Ns),l) = one_batch
         
-        Qs = Qs.to(self.model.device)
-        Ps = Ps.to(self.model.device)
-        Ns = Ns.to(self.model.device)
+        if self.device is not None:
+            Qs = Qs.to(self.device)
+            Ps = Ps.to(self.device)
+            Ns = Ns.to(self.device)
         
         Q_embedding_vectors = self.model(Qs)
         P_embedding_vectors = self.model(Ps)
