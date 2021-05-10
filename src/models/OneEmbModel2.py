@@ -16,13 +16,13 @@ class OneEmbModel2(torch.nn.Module):
         self.resnet = None
 
         if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=pretrained)
+            self.resnet = tvmodels.resnet18(pretrained=True)
         elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=pretrained)
+            self.resnet = tvmodels.resnet50(pretrained=True)
         elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=pretrained)
+            self.resnet = tvmodels.resnet101(pretrained=True)
         elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=pretrained)
+            self.resnet = tvmodels.resnet152(pretrained=True)
         else:
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
