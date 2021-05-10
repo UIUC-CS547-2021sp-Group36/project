@@ -11,6 +11,8 @@ import data.ImageLoader as ImageLoader
 import LossFunction
 import models
 
+from Trainer import Trainer
+
 class ClassifierAccuracy(torch.nn.Module):
     def __init__(self,reduction:str="sum"):
         super(ClassifierAccuracy,self).__init__()

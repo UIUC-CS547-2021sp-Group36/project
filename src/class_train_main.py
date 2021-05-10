@@ -61,41 +61,9 @@ def main(args):
                 break
 
 
-
-def pos_int(i):
-    ival = int(i)
-    if ival <= 0:
-        raise argparse.ArgumentTypeError("{} is not a positive integer".format(i))
-    return ival
-
-def nonneg_int(i):
-    ival = int(i)
-    if ival < 0:
-        raise argparse.ArgumentTypeError("{} is not a non-negative integer".format(i))
-    return ival
-
-def nonneg_float(f):
-    fval = float(f)
-    if fval < 0.0:
-        raise argparse.ArgumentTypeError("{} is not a non-negative float.".format(f))
-    return fval
-    
-def str_list(s):
-    return s.split(",")
-
-def check_datasplit(in_str):
-    splits = list(map(float,in_str.split(",")))
-    if len(splits) != 2:
-        raise argparse.ArgumentTypeError("You must provide two values for splits, comma separated. Their sum must be <= 1.0")
-    if not 0.0 < sum(splits) <= 1.0:
-        raise argparse.ArgumentTypeError("The sum of values must be on the interval (0.0,1.0], you provided {} which sum to {}".format(
-                                            in_str,
-                                            sum(splits)
-        ))
-    splits.append(1.0-sum(splits))
-    return splits
-    
 if __name__ == "__main__":
+    from util.cli import *
+    
     arg_parser = argparse.ArgumentParser(description='Train an image similarity vector embedding')
     arg_parser.add_argument("--verbose","-v",action="store_true",default=False)
     
@@ -115,8 +83,9 @@ if __name__ == "__main__":
     
     training_group = arg_parser.add_argument_group("training")
     training_group.add_argument("--epochs",metavar="N_epochs",type=int)
+    training_group.add_argument("--subepoch_size",metavar="N_samples",type=int,default=None,help="The trainer will consier it an epoch once it sees N_samples data, regardless of batch size.")
     training_group.add_argument("--batch_size",type=pos_int,default=200)
-    training_group.add_argument("--checkpoint","-c",type=int, default=50)
+    training_group.add_argument("--checkpoint","-c",type=int, default=50,help="Interval for extra checkpoints if doing very long epochs. Being depricated.")
     
     training_alg_group = arg_parser.add_argument_group("training_alg")
     training_alg_group.add_argument("--optimizer",type=str,choices=["Adam"],default="Adam")
