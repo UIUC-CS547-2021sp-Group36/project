@@ -113,6 +113,19 @@ class Trainer(object):
         
         return overal_mean_norms
     
+    def log_lr(self):
+        lr = 0.0
+        n_seen = 0
+        for param_group in self.optimizer.param_groups:
+            lr += param_group["lr"]
+            n_seen += 1
+        
+        lr = lr/n_seen
+        if self.verbose:
+            print("LR : {}".format(lr))
+        wandb.log({"current_lr":lr},commit=False,step=wandb.run.step)
+
+    
     def train_one_batch(self, one_batch,batch_idx=None):
         ((Qs,Ps,Ns),l) = one_batch
         
@@ -186,8 +199,8 @@ class Trainer(object):
                     self.lr_schedule.step(batchgroup_average_batch_loss)
                     batchgroup_average_batch_loss = 0.0
                     
-                    
                     #Any logging of LR rate
+                    self.log_lr()
                 
                 #TODO: Any per-batch logging
                 #END of loop over batches
