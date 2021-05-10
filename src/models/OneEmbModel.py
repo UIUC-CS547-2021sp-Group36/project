@@ -26,6 +26,7 @@ class OneEmbModel(torch.nn.Module):
         else:
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
+        self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=48, kernel_size=8, padding=1, stride=8),
@@ -50,7 +51,8 @@ class OneEmbModel(torch.nn.Module):
 
     def forward(self, images):
 
-        rn_embed = self.resnet(images)
+        images224 = self.upsample_rn(images)
+        rn_embed = self.resnet(images224)
         rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
         rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
 

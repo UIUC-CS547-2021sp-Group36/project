@@ -26,6 +26,8 @@ class NewModel(torch.nn.Module):
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
 
+        self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
+
         self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
         self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
         self.maxpool1 = torch.nn.MaxPool2d(kernel_size=3, padding=1, stride=4)
@@ -39,7 +41,8 @@ class NewModel(torch.nn.Module):
 
     def forward(self, images):
 
-        rn_embed = self.resnet(images)
+        images224 = self.upsample_rn(images)
+        rn_embed = self.resnet(images224)
         rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
         rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
 
