@@ -17,6 +17,8 @@ def create_model(model_name="dummy"):
         return tvmodels.resnet50(pretrained=True)
     elif "resnet50" == model_name:
         return tvmodels.resnet50(pretrained=True)
+    elif "resnet101" == model_name:
+        return tvmodels.resnet101(pretrained=True)
     elif model_name in ["newModel","NewModel"]:
         return NewModel()
     elif "paper_resnet18" == model_name:
