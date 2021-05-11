@@ -38,6 +38,7 @@ def main():
     
     dataset_group = arg_parser.add_argument_group("data")
     dataset_group.add_argument("--dataset","-d",metavar="TINY_IMAGENET_ROOT_DIRECTORY",type=str,default="/workspace/datasets/tiny-imagenet-200/")
+    dataset_group.add_argument("--batch_size",type=int,default=200)
     dataset_group.add_argument("--num_workers",type=nonneg_int,default=0)
     
     model_group = arg_parser.add_argument_group("model")
@@ -62,6 +63,7 @@ def main():
         model.load_state_dict( torch.load(args.weight_file,map_location=torch.device("cpu")) )
     else:
         print("Warning, no weights loded. Predicting with default/initial weights.")
+    model.eval()
     
     print("Loading dataset")
     #load the crossval split of TinyImageNet (which we are using as a test split)
@@ -69,17 +71,17 @@ def main():
     #load from the training data.
     #test_data = ImageLoader.ImageFolderSubset(ImageLoader.load_imagefolder("/workspace/datasets/tiny-imagenet-200/"),list(range(1,100000,100)))
     
-    inference_dataloader = torch.utils.data.DataLoader(test_data,shuffle=False,batch_size=20,num_workers=args.num_workers)
+    inference_dataloader = torch.utils.data.DataLoader(test_data,shuffle=False,batch_size=args.batch_size,num_workers=args.num_workers)
     
     embeddings = list()
     
-    
-    for batch_idx, (imgs, labels) in enumerate(inference_dataloader):
-        if batch_idx % 10 == 0:
-            print(batch_idx)
-        some_emb = model(imgs).detach()
-        some_emb = torch.nn.functional.normalize(some_emb).detach()
-        embeddings.append(some_emb.detach().numpy())#uses much less memory.
+    with torch.no_grad():
+        for batch_idx, (imgs, labels) in enumerate(inference_dataloader):
+            if batch_idx % 10 == 0:
+                print(batch_idx)
+            some_emb = model(imgs).detach()
+            some_emb = torch.nn.functional.normalize(some_emb).detach()
+            embeddings.append(some_emb.detach().numpy())#uses much less memory.
     
     embeddings = numpy.vstack(embeddings)
     numpy.savetxt(args.out, embeddings)
