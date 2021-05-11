@@ -14,7 +14,7 @@ from .RescaleResnet import RescaleResnet
 def create_model(model_name="dummy"):
     if "resnet18" == model_name:
         return tvmodels.resnet18(pretrained=True)
-    if "rescaled_resnet18" == model_name:
+    elif "rescaled_resnet18" == model_name:
         return RescaleResnet("resnet18",pretrained=True)
     elif "resnet34" == model_name:
         return tvmodels.resnet50(pretrained=True)

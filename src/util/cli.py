@@ -18,6 +18,23 @@ def nonneg_float(f):
         raise argparse.ArgumentTypeError("{} is not a non-negative float.".format(f))
     return fval
     
+class float_in_range(object):
+    def __init__(self,min=float("-inf"),max=float("-inf")):
+        self.min = min
+        self.max = max
+        self.range = "[" if self.min is not float("-inf") else "("
+        self.range += "{:.4f}".format(self.min)
+        self.range += ","
+        self.range += "{:.4f}".format(self.max)
+        self.range = "}" if self.max is not float("inf") else ")"
+        
+    
+    def __call__(self,v):
+        v = float(v)
+        if not self.min <= v <= self.max:
+            raise argparse.ArgumentTypeError("{:.5f} is not in the range {}".format(v,self.range))
+        return v
+    
 def str_list(s):
     return s.split(",")
     

@@ -80,7 +80,7 @@ def main():
             if batch_idx % 10 == 0:
                 print(batch_idx)
             some_emb = model(imgs).detach()
-            some_emb = torch.nn.functional.normalize(some_emb).detach()
+            #some_emb = torch.nn.functional.normalize(some_emb).detach()
             embeddings.append(some_emb.detach().numpy())#uses much less memory.
     
     embeddings = numpy.vstack(embeddings)
