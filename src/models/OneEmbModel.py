@@ -63,15 +63,15 @@ class OneEmbModel(torch.nn.Module):
         embed = self.fc1(embed)
         embed = self.fc2(embed)
         #DEBUG
-        print('shape after fc2: ', embed.shape)
+        #print('shape after fc2: ', embed.shape)
         embed_norm = embed.norm(p=2, dim=1, keepdim=True)
         embed = embed.div(embed_norm.expand_as(embed))
 
-        print('shape after norm: ', embed.shape)
+        #print('shape after norm: ', embed.shape)
 
         final_embed = torch.cat([rn_embed, embed], 1)
         #DEBUG
-        print('Embed after concatenating: ', final_embed.shape)
+        #print('Embed after concatenating: ', final_embed.shape)
 
         final_embed = self.linearization(final_embed)
         final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
