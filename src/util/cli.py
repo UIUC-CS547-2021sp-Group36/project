@@ -58,5 +58,8 @@ def check_datasplit(in_str):
                                             in_str,
                                             sum(splits)
         ))
-    splits.append(1.0-sum(splits))
+    if len(splits) == 2:
+        splits.append(1.0-sum(splits))
+    if len(splits) != 3:
+        raise argparse.ArgumentTypeError("Some kind of problem happened. Sorry.")
     return splits
