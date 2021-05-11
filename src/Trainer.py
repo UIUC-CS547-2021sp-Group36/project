@@ -43,7 +43,7 @@ class Trainer(object):
         self.total_epochs = 0
         
         #Various intervals
-        self.lr_interval = 10
+        self.lr_interval = 200
         
         #Logging
         self.verbose = verbose #log to terminal too?
@@ -172,6 +172,8 @@ class Trainer(object):
                 break
             self.total_epochs += 1
             
+            self.log_lr()
+            
             epoch_average_batch_loss = 0.0;
             batchgroup_average_batch_loss = 0.0;
             
@@ -211,7 +213,7 @@ class Trainer(object):
                     self.create_checkpoint()
                 
                 #LEARNING SCHEDULE
-                if 0 != batch_idx and 0 == batch_idx%self.lr_interval:
+                if 0 != batch_idx and self.lr_interval > 0 and 0 == batch_idx%self.lr_interval:
                     batchgroup_average_batch_loss /= self.lr_interval
                     self.lr_schedule.step(batchgroup_average_batch_loss)
                     batchgroup_average_batch_loss = 0.0
