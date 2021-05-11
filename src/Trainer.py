@@ -87,19 +87,20 @@ class Trainer(object):
         self.model.eval()
         total_validation_loss = 0.0
         total_seen = 0
-        for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
-            
-            if self.device is not None:
-                Qs = Qs.to(self.device)
-                Ps = Ps.to(self.device)
-                Ns = Ns.to(self.device)
-            
-            Q_emb = self.model(Qs).detach()
-            P_emb = self.model(Ps).detach()
-            N_emb = self.model(Ns).detach()
-            
-            total_validation_loss += float(self.accuracy_function(Q_emb, P_emb, N_emb))
-            total_seen += int(len(l))
+        with torch.no_grad():
+            for batch_idx, ((Qs,Ps,Ns),l) in enumerate(self.validation_set):
+                
+                if self.device is not None:
+                    Qs = Qs.to(self.device)
+                    Ps = Ps.to(self.device)
+                    Ns = Ns.to(self.device)
+                
+                Q_emb = self.model(Qs).detach()
+                P_emb = self.model(Ps).detach()
+                N_emb = self.model(Ns).detach()
+                
+                total_validation_loss += float(self.accuracy_function(Q_emb, P_emb, N_emb))
+                total_seen += int(len(l))
         
         total_validation_loss /= float(total_seen)
         total_validation_loss = 1.0 - total_validation_loss
@@ -111,9 +112,11 @@ class Trainer(object):
         return total_validation_loss
     
     def norm_logging(self, q_emb,p_emb,n_emb):
-        mqn = float(torch.norm(q_emb.detach(),dim=1).mean())
-        mpn = float(torch.norm(p_emb.detach(),dim=1).mean())
-        mnn = float(torch.norm(n_emb.detach(),dim=1).mean())
+        
+        with torch.no_grad():
+            mqn = float(torch.norm(q_emb.detach(),dim=1).mean())
+            mpn = float(torch.norm(p_emb.detach(),dim=1).mean())
+            mnn = float(torch.norm(n_emb.detach(),dim=1).mean())
         overall_mean_norms = float((mqn + mpn + mnn)/3.0)
         
         if self.verbose:
