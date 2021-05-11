@@ -1,5 +1,13 @@
 import argparse
 
+import yaml
+
+def load_yaml_file(fn):
+    if fn is None:
+        return None
+    with open(fn,"r") as stream:
+        return yaml.load(stream,Loader=yaml.Loader)
+
 def pos_int(i):
     ival = int(i)
     if ival <= 0:
@@ -40,8 +48,11 @@ def str_list(s):
     
 def check_datasplit(in_str):
     splits = list(map(float,in_str.split(",")))
+    
+    if len(splits) == 1:
+        splits.append(1.0 - sum(splits))
     if len(splits) != 2:
-        raise argparse.ArgumentTypeError("You must provide two values for splits, comma separated. Their sum must be <= 1.0")
+        raise argparse.ArgumentTypeError("You must provide one or two values for splits, comma separated. Their sum must be <= 1.0")
     if not 0.0 < sum(splits) <= 1.0:
         raise argparse.ArgumentTypeError("The sum of values must be on the interval (0.0,1.0], you provided {} which sum to {}".format(
                                             in_str,
