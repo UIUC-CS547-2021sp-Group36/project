@@ -48,13 +48,20 @@ def final_accuracy(model, a_dataloader, triplet_accuracy=None, device=None, divi
         return total_correct, total_seen
     
 
-def embed_using_model(model, a_dataloader,normalize=False):
+def embed_using_model(model, a_dataloader, device=None, normalize=False):
+    if device is not None:
+        model = model.to(device)
+    
     embeddings = list()
     
     with torch.no_grad():
         for batch_idx, (imgs, labels) in enumerate(a_dataloader):
             if batch_idx % 10 == 0:
                 print(batch_idx)
+            
+            if device is not None:
+                imgs = imgs.to(device)
+            
             some_emb = model(imgs).detach()
             
             if normalize:
@@ -149,10 +156,10 @@ test_tsdl = ImageLoader.TripletSamplingDataLoader(query_dataset,
                                     batch_size=args.batch_size,
                                     num_workers=args.num_workers)
 
-train_accuracy =  final_accuracy(model, train_tsdl)
+train_accuracy =  final_accuracy(model, train_tsdl, device=args.use_device)
 print("Accuracy on (subsample of) training triplets: {:.5f}".format(train_accuracy))
 
-test_accuracy  =  final_accuracy(model, test_tsdl)
+test_accuracy  =  final_accuracy(model, test_tsdl, device=args.use_device)
 print("Accuracy on (subsample of) test triplets: {:.5f}".format(test_accuracy))
 
 
@@ -161,8 +168,8 @@ print("Accuracy on (subsample of) test triplets: {:.5f}".format(test_accuracy))
 db_dataloader    = torch.utils.data.DataLoader(database_dataset,shuffle=False,batch_size=args.batch_size,num_workers=args.num_workers)
 query_dataloader = torch.utils.data.DataLoader(query_dataset,shuffle=False,batch_size=args.batch_size,num_workers=args.num_workers)
 
-db_embeddings    = embed_using_model(model, db_dataloader)
-query_embeddings = embed_using_model(model, query_dataloader)
+db_embeddings    = embed_using_model(model, db_dataloader, device=args.use_device)
+query_embeddings = embed_using_model(model, query_dataloader, device=args.use_device)
 #numpy.savetxt(args.out, embeddings)
 #HDF5 would be much better.
 
