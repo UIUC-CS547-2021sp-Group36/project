@@ -68,7 +68,7 @@ def embed_using_model(model, a_dataloader, device=None, normalize=False):
                 #for a while, we tried putting output normalization into the loss function
                 some_emb = torch.nn.functional.normalize(some_emb).detach()
                 
-            embeddings.append(some_emb.detach().numpy())#uses much less memory.
+            embeddings.append(some_emb.detach().cpu().numpy())#uses much less memory.
     
     embeddings = numpy.vstack(embeddings)
     return embeddings
