@@ -29,6 +29,7 @@ from util.cli import *
 arg_parser = argparse.ArgumentParser(description='Train an image similarity vector embedding')
 arg_parser.add_argument("--verbose","-v",action="store_true")
 arg_parser.add_argument("--seed",type=int,default=1234)
+arg_parser.add_argument("--config",type=load_yaml_file,default=None,help="Use the config from a run to automatically choose model and batch_size.")
 
 dataset_group = arg_parser.add_argument_group("data")
 dataset_group.add_argument("--dataset","-d",metavar="TINY_IMAGENET_ROOT_DIRECTORY",type=str,default="/workspace/datasets/tiny-imagenet-200/")
@@ -47,6 +48,10 @@ model_group.add_argument("--weight_file",type=str,default=None)
 #arg_parser.add_argument("--n_worst",type=int,default=10)
 
 args = arg_parser.parse_args()
+if args.config is not None:
+    args.model = args.config["model"]["value"]
+    args.batch_size = args.config["batch_size"]["value"]
+
 args.train_split = [args.train_split,(1.0-args.train_split)/2.0, (1.0-args.train_split)/2.0]
 args.test_split  = [args.test_split,(1.0-args.test_split)/2.0, (1.0-args.test_split)/2.0]
 #print(args)
