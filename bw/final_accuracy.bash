@@ -21,7 +21,7 @@ do
     pushd results/${one_run}
     
     aprun -b -n 1 -d 16  -- shifter --image=docker:luntlab/cs547_project:latest \
-        --module=mpich,gpu -- wandb -e ${WANDB_ENTITY} -p ${WANDB_PROJECT} ${one_run}
+        --module=mpich,gpu -- wandb pull -e ${WANDB_ENTITY} -p ${WANDB_PROJECT} ${one_run}
     
     aprun -b -n 1 -d 16  -- shifter --image=docker:luntlab/cs547_project:latest \
         --module=mpich,gpu -- python ${PBS_O_WORKDIR}/src/eval_neighbors.py \
