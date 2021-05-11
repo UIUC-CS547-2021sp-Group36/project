@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import warnings
 
@@ -57,7 +58,7 @@ def embed_using_model(model, a_dataloader, device=None, normalize=False):
     with torch.no_grad():
         for batch_idx, (imgs, labels) in enumerate(a_dataloader):
             if batch_idx % 10 == 0:
-                print(batch_idx)
+                print(batch_idx,file=sys.stderr)
             
             if device is not None:
                 imgs = imgs.to(device)
@@ -103,7 +104,7 @@ if args.config is not None:
     args.batch_size = args.config["batch_size"]["value"]
 
 if args.num_workers != 0:
-    print("num_workers != 0 currently causes memory leaks")
+    print("num_workers != 0 currently causes memory leaks",file=sys.stderr)
     
 
 
@@ -112,19 +113,19 @@ if args.num_workers != 0:
 args.use_cuda = False
 args.use_device = "cpu"
 if torch.cuda.is_available():
-    print("CUDA is available, so we're going to try to use that!")
+    print("CUDA is available, so we're going to try to use that!",file=sys.stderr)
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
     args.use_cuda = True
     args.use_device = "cuda:0"
 
 
 #=========== MODEL ==============
-print("creating and loading model")
+print("creating and loading model",file=sys.stderr)
 model = models.create_model(args.model)
 if args.weight_file is not None:
     model.load_state_dict( torch.load(args.weight_file,map_location=torch.device("cpu")) )
 else:
-    print("Warning, no weights loded. Predicting with default/initial weights.")
+    print("Warning, no weights loded. Predicting with default/initial weights.",file=sys.stderr)
 model.eval()
 
 if args.use_cuda:
@@ -133,7 +134,7 @@ if args.use_cuda:
 
 #============= DATA ==============
 
-print("Loading datasets")
+print("Loading datasets",file=sys.stderr)
 import random
 random.seed(args.seed)
 
