@@ -121,7 +121,7 @@ else:
 model.eval()
 
 if args.use_cuda:
-    model = model.to(use_device)
+    model = model.to(args.use_device)
 
 
 #============= DATA ==============
