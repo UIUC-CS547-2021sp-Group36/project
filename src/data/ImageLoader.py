@@ -7,6 +7,9 @@ import torch
 import torch.utils.data
 
 from typing import Sequence
+
+from .TinyImageNet import TinyImageNet
+
 class ImageFolderSubset(torch.utils.data.dataset.Subset):
     """A class that represents a subset of a torchvision.datasets.ImageFolder
     
@@ -49,7 +52,9 @@ class ImageFolderSubset(torch.utils.data.dataset.Subset):
     
     @property
     def imgs(self):
-        return self.samples()
+        if self.__imgs is None:
+            self.__imgs = [self.dataset.imgs[i] for i in self.indices]
+        return self.__imgs
 
 class ImageFolderLabelIndex(object):
     def __init__(self, dataset:torchvision.datasets.ImageFolder):
@@ -108,16 +113,51 @@ class ImageFolderLabelIndex(object):
         
 
 class TripletSamplingDataLoader(torch.utils.data.DataLoader):
+    class Batch(object):
+        """
+        This custom batch object makes it possible to know how long the batch is without knowing about its contents
+        """
+        def __init__(self, X, Y,lenhint=None):
+            self.X = X
+            self.Y = Y
+            self.length = lenhint if lenhint is not None else len(Y)
+        
+        def __getitem__(self,i):
+            if i == 0:
+                return self.X
+            if i == 1:
+                return self.Y
+            else:
+                raise IndexError("index out of bounds")
+        
+        def __len__(self):
+            return self.length
+    
     def __init__(self, dataset:torchvision.datasets.ImageFolder,
                             batch_size=20,
                             shuffle=True,
                             num_workers: int = 0,
-                            pin_memory=False):
+                            pin_memory=False,
+                            collate_fn=None,
+                            sampler=None):
+        
+        #TODO: Currently using workers causes a memory leak. Fix later.
+        #BUG, WORKAROUND
+        import warnings
+        if num_workers != 0:
+            warnings.warn("TripletSamplingDataLoader: num_workers != 0 causes memory leaks and is currently suppressed.")
+            num_workers = 0
+        #END WORKAROUND
+        
+        if sampler is not None:
+            shuffle=False
+        
         super(TripletSamplingDataLoader, self).__init__(dataset,
             batch_size=batch_size,
+            sampler=sampler,
             shuffle=shuffle,
             num_workers=num_workers,
-            collate_fn=self.collate_fn,
+            collate_fn=self.collate_fn if collate_fn is None else collate_fn,
             pin_memory=pin_memory)
         self.label_index = ImageFolderLabelIndex(self.dataset)
     
@@ -138,16 +178,30 @@ class TripletSamplingDataLoader(torch.utils.data.DataLoader):
             positive_image_tensor.pin_memory()
             negative_image_tensor.pin_memory()
         
-        return (query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach()
-
-def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/train",transform=None,is_valid_file=None):
+        return self.Batch((query_tensor.detach(), positive_image_tensor.detach(), negative_image_tensor.detach()), torch.IntTensor(labels).detach())
+    
+def load_imagefolder(path="/workspace/datasets/tiny-imagenet-200/",split="train",transform=None,is_valid_file=None):
     import torchvision
     from torchvision import datasets, transforms as T
     if transform is None:
         #The training dataset is already sized at 64
         transform = T.Compose([T.Resize(64), T.CenterCrop(64), T.ToTensor()])
     
-    loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=is_valid_file)
+    def check_valid(path):
+        if path.rsplit(".",1)[-1] == "txt":
+            #skip .txt files which give bounding boxes.
+            return False
+        
+        try:
+            torchvision.datasets.folder.default_loader(path)
+            return True
+        except:
+            print("BAD FILE: {}".format(path))
+            return False
+        return True
+    
+    #loaded_dataset = torchvision.datasets.ImageFolder(path,transform=transform,is_valid_file=check_valid)
+    loaded_dataset = TinyImageNet(root=path,split=split,transform=transform,is_valid_file=check_valid if is_valid_file is None else is_valid_file)
     return loaded_dataset
 
 def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequence[float]):
@@ -165,12 +219,14 @@ def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequ
         sizes = [int(p*N_label) for p in proportions]
         #Probably does not sum to N_label.
         #May have some groups getting assigned 0 elements.
+        #Make sure to assign unassigned data to those splits first.
         remainder = N_label - sum(sizes)
         for i in range(N_splits):
             if sizes[i] == 0 and remainder > 0:
                 sizes[i]+=1
                 remainder-=1
         
+        #Assign any still unassigned data to a split
         #TODO: Ugly, and surely a closed-form solution exists
         while remainder > 0:
             for i in range(N_splits):
@@ -196,55 +252,4 @@ def split_imagefolder(dataset:torchvision.datasets.ImageFolder, proportions:Sequ
     return return_splits
 
 if __name__ == "__main__":
-    
-    import torch
-    print("load data")
-    all_train = load_imagefolder("/workspace/datasets/tiny-imagenet-200/train")
-    
-    
-    print("index data")
-    an_index = ImageFolderLabelIndex(all_train)
-    
-    print("done indexing data")
-    
-    if False:
-        print("Example sampling")
-        for i in range(20):
-            l = an_index.sample_label(weighted_classes=False)
-            i_query = an_index.sample_item(label=l)
-            i_pos = an_index.sample_item(label=l)
-            i_neg = an_index.sample_item(exclude=l)
-        
-            print(l,i_query, i_pos, i_neg)
-        
-    tsdl = TripletSamplingDataLoader(all_train,batch_size=20, num_workers=2)
-    
-    if False:
-        import torchvision.models as models
-        resnet18 = models.resnet18(pretrained=True)
-        
-        for i, ((q,p,n),l) in enumerate(tsdl):
-            print(q.is_pinned())
-            print(p.is_pinned())
-            print(n.is_pinned())
-            print("batch ", i, l.tolist())
-            
-            q_emb = resnet18(q)
-            
-            print(q_emb)
-            
-            if i == 3:
-                break
-    
-    if False:
-        subset_test = ImageFolderSubset(all_train,[1,2,3,670])
-        print(subset_test.targets)
-    
-    splits = split_imagefolder(all_train,[0.1,0.9])
-    
-    tsdl = TripletSamplingDataLoader(splits[0],batch_size=20, num_workers=2)
-    
-    #import torchvision.models as models
-    #resnet18 = models.resnet18(pretrained=True)
-    
-    #resnet18.forward(all_train[0][0].unsqueeze(0)) #the unsqeeze is because resnet only wants batches.
+    print("tests have been moved to the module data.ImageLoader_Tests")
