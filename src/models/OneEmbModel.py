@@ -7,24 +7,14 @@ import torchvision.models as tvmodels
 
 import torch.nn.functional as tnnf
 
+import models.resnet_factory as resnet_factory
 
 class OneEmbModel(torch.nn.Module):
     def __init__(self,resnet= "resnet101",out_features=1000, pretrained=True):
         super(OneEmbModel, self).__init__()
         self.out_features = out_features
 
-        self.resnet = None
-
-        if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=True)
-        elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=True)
-        elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=True)
-        elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=True)
-        else:
-            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
+        self.resnet = resnet_factory.create_resnet(resnet,pretrained)
 
         #self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
 

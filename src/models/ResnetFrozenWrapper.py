@@ -5,26 +5,19 @@ import torchvision.models as models
 import torchvision.models as tvmodels
 
 
+import torch.nn.functional as tnnf
+
+import models.resnet_factory as resnet_factory
+
 #write models here
 class ResnetFrozenWrapper(torch.nn.Module):
     def __init__(self, resnet="resnet18", freeze_resnet=True,pretrained=True, out_features=300,internal_dimension=500):
         super(ResnetFrozenWrapper, self).__init__()
-        self.resnet = None
-        
-        if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=pretrained)
-        elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=pretrained)
-        elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=pretrained)
-        elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=pretrained)
-        else:
-            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
+        self.resnet = resnet_factory.create_resnet(resnet,pretrained)
 
         #We find the dimensions of the output from resnet
         #that will be the dimension of the input for the subesquent layer
-        n_resnetout = list(self.resnet.children())[-1].out_features
+        n_resnetout = resnet_factory.find_resnet_out_features(self.resnet)
 
         self.additional_layers = torch.nn.Sequential(
             torch.nn.Linear(n_resnetout, internal_dimension),
