@@ -220,10 +220,32 @@ best_paths_labels  = [[database_dataset.imgs[i] for i in j] for j in display_bes
 worst_paths_labels = [[database_dataset.imgs[i] for i in j] for j in display_worst_M]
 
 #Basenames of all the filenames
+#We can look up the classname if we need, but we'll save it just for convenience.
 query_paths_labels = list(map(lambda x:(os.path.basename(x[0]),x[1]), query_paths_labels))
-best_paths_labels  = [list(map(lambda x:(os.path.basename(x[0]),x[1]), j)) for j in best_paths_labels]
-worst_paths_labels  = [list(map(lambda x:(os.path.basename(x[0]),x[1]), j)) for j in worst_paths_labels]
 
+#The training images have their classname in the image name. It7s inconvenient in this file.
+#best_paths  = [list(map(lambda x:os.path.basename(x[0]), j)) for j in best_paths_labels]
+best_paths  = [list(map(lambda x:x[0], j)) for j in best_paths_labels]
+best_labels = [list(map(lambda x:x[1], j)) for j in best_paths_labels]
+
+#worst_paths  = [list(map(lambda x:os.path.basename(x[0]), j)) for j in worst_paths_labels]
+worst_paths  = [list(map(lambda x:x[0], j)) for j in worst_paths_labels]
+worst_labels  = [list(map(lambda x:x[1], j)) for j in worst_paths_labels]
+
+#TODO: Just save everything in HDF5 or some kind of structured storage.
 numpy.savetxt("queries.txt",query_paths_labels,fmt="%s")
-numpy.savetxt("best_for_display.txt",numpy.array(best_paths_labels).reshape(N_for_display,-1),fmt="%s")
-numpy.savetxt("worst_for_display.txt",numpy.array(worst_paths_labels).reshape(N_for_display,-1),fmt="%s")
+numpy.savetxt("queries_emb.txt",display_query_embeddings)
+
+numpy.savetxt("best_paths_for_display.txt",numpy.array(best_paths).reshape(N_for_display,-1),fmt="%s")
+numpy.savetxt("best_labels_for_display.txt",numpy.array(best_labels).reshape(N_for_display,-1),fmt="%s")
+numpy.savez_compressed("best_embeddings.npz",db_embeddings[display_best_M])
+#TODO: this could be done with numpy indices if I could figure them out.
+#numpy.savetxt("best_distances.txt",display_distances[display_best_M])
+numpy.savetxt("best_distances.txt",numpy.array([display_distances[i,display_best_M[i]] for i in range(display_distances.shape[0])]))
+
+
+numpy.savetxt("worst_paths_for_display.txt",numpy.array(worst_paths).reshape(N_for_display,-1),fmt="%s")
+numpy.savetxt("worst_labels_for_display.txt",numpy.array(worst_labels).reshape(N_for_display,-1),fmt="%s")
+numpy.savez_compressed("worst_embeddings.npz",db_embeddings[display_worst_M])
+#numpy.savetxt("worst_distances.txt",display_distances[display_worst_M])
+numpy.savetxt("worst_distances.txt",numpy.array([display_distances[i,display_worst_M[i]] for i in range(display_distances.shape[0])]))
