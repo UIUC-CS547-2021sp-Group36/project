@@ -12,6 +12,8 @@ shifterimg pull luntlab/cs547_project:latest
 RESUME_ARGS=""
 MODEL_ARGS="--model paper_resnet18 "
 
+WANDB_RUN_ID=${PBS_JOBID}
+
 export OMP_NUM_THREADS=16
 aprun -b -n 1 -d 16  -- shifter --image=docker:luntlab/cs547_project:latest \
     --module=mpich,gpu -- python src/train_main.py -v \
