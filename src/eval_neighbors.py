@@ -12,6 +12,7 @@ import data.ImageLoader as ImageLoader
 import LossFunction
 
 import sklearn.neighbors
+import scipy.spatial.distance
 
 def final_accuracy(model, a_dataloader, triplet_accuracy=None, device=None, divide_at_end=True):
     if args.use_device is not None:
@@ -190,4 +191,39 @@ print("top accuracy ('knn-1'): {}".format(accuracy) )
 
 dharawat_accuracy = ((query_classes.reshape(-1,1) == hit_classes).sum(1) > 0).mean()
 print("dharawat accuracy ('knn-30'): {}".format(dharawat_accuracy))
-    
+
+#============= Select N=5 random query images and find the best and worst M=10 for them.
+N_for_display = 5
+M_best_worst = 10
+N_train = db_embeddings.shape[0]
+N_test  = query_embeddings.shape[0]
+
+random_queries = set()
+assert N_test > N_for_display, "Can't choose {} unique items from a set of size {}!".format(N_for_display, N_test)
+while len(random_queries) < N_for_display:
+    random_queries.add(numpy.random.randint(0,N_test))
+random_queries = list(random_queries)
+random_queries.sort()
+random_queries = numpy.array(random_queries)
+
+display_query_embeddings = query_embeddings[random_queries]
+
+#Can't use KNN to find the _worst_ matches. Must compare all.
+display_distances = scipy.spatial.distance.cdist(display_query_embeddings,db_embeddings,metric='euclidean')
+sorted_keys = display_distances.argsort(1)
+display_best_M  = sorted_keys[:,:M_best_worst]
+display_worst_M = sorted_keys[:,-M_best_worst:]
+
+#get filename and label for all the matches.
+query_paths_labels = [query_dataset.imgs[i] for i in random_queries]
+best_paths_labels  = [[database_dataset.imgs[i] for i in j] for j in display_best_M]
+worst_paths_labels = [[database_dataset.imgs[i] for i in j] for j in display_worst_M]
+
+#Basenames of all the filenames
+query_paths_labels = list(map(lambda x:(os.path.basename(x[0]),x[1]), query_paths_labels))
+best_paths_labels  = [list(map(lambda x:(os.path.basename(x[0]),x[1]), j)) for j in best_paths_labels]
+worst_paths_labels  = [list(map(lambda x:(os.path.basename(x[0]),x[1]), j)) for j in worst_paths_labels]
+
+numpy.savetxt("queries.txt",query_paths_labels,fmt="%s")
+numpy.savetxt("best_for_display.txt",numpy.array(best_paths_labels).reshape(N_for_display,-1),fmt="%s")
+numpy.savetxt("worst_for_display.txt",numpy.array(worst_paths_labels).reshape(N_for_display,-1),fmt="%s")
