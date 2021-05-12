@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.models as tvmodels
 
-
+import torch.nn.functional as tnnf
 
 
 class NewModel(torch.nn.Module):
@@ -26,7 +26,7 @@ class NewModel(torch.nn.Module):
             raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
 
 
-        self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
+        #self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
 
         self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
         self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
@@ -41,10 +41,10 @@ class NewModel(torch.nn.Module):
 
     def forward(self, images):
 
-        images224 = self.upsample_rn(images)
+        #images224 = self.upsample_rn(images)
+        images224 = images
         rn_embed = self.resnet(images224)
-        rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
-        rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
+        rn_embed = tnnf.normalize(rn_embed,p=2, dim=1)
 
         down_images1 = self.downsample1(images)
         first_embed = self.conv1(down_images1)
@@ -60,10 +60,9 @@ class NewModel(torch.nn.Module):
 
 
         merge_embed = torch.cat([first_embed, second_embed], 1)
-        merge_norm = merge_embed.norm(p=2, dim=1, keepdim=True)
         #DEBUG
         #print('Shape after nnorm: ', merge_norm.shape)
-        merge_embed = merge_embed.div(merge_norm.expand_as(merge_embed))
+        merge_embed = tnnf.normalize(merge_embed,p=2,dim=1)
 
         #DEBUG
         #print(merge_embed.shape, rn_embed.shape)
@@ -72,8 +71,7 @@ class NewModel(torch.nn.Module):
         #DEBUG
         #print(final_embed.shape)
         final_embed = self.linearization(final_embed)
-        final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
-        output = final_embed.div(final_norm.expand_as(final_embed))
+        output = tnnf.normalize(final_embed,p=2,dim=1)
 
 
         return output
