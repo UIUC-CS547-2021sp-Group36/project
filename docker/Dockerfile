@@ -28,7 +28,8 @@ RUN apt update && \
 
 RUN conda install -y scipy && \
     conda install -c conda-forge yaml && \
-    conda install -y -c conda-forge wandb
+    conda install -y -c conda-forge wandb && \
+    conda install -y scikit-learn jedi==0.17.2 pandas
     
 RUN cd /tmp && \
     git clone https://github.com/PyTorchLightning/pytorch-lightning.git && \

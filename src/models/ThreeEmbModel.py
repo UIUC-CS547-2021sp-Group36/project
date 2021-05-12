@@ -5,7 +5,9 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.models as tvmodels
 
+import torch.nn.functional as tnnf
 
+import models.resnet_factory as resnet_factory
 
 
 class ThreeEmbModel(torch.nn.Module):
@@ -13,19 +15,9 @@ class ThreeEmbModel(torch.nn.Module):
         super(ThreeEmbModel, self).__init__()
         self.out_features = out_features
 
-        self.resnet = None
+        self.resnet = resnet_factory.create_resnet(resnet,pretrained)
 
-        if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=pretrained)
-        elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=pretrained)
-        elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=pretrained)
-        elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=pretrained)
-        else:
-            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
-
+        #self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
 
         self.downsample1 = torch.nn.Upsample(size=57, mode='bilinear')
         self.conv1 = torch.nn.Conv2d(in_channels=3, out_channels=96, kernel_size=8, padding=1, stride=3)
@@ -44,10 +36,12 @@ class ThreeEmbModel(torch.nn.Module):
 
     def forward(self, images):
 
-        rn_embed = self.resnet(images)
-        rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
-        rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
-
+        #images224 = self.upsample_rn(images)
+        images224 = images
+        rn_embed = self.resnet(images224)
+        rn_embed = tnnf.normalize(rn_embed,p=2, dim=1)
+        
+        
         down_images1 = self.downsample1(images)
         first_embed = self.conv1(down_images1)
         first_embed = self.maxpool1(first_embed)
@@ -68,10 +62,9 @@ class ThreeEmbModel(torch.nn.Module):
 
 
         merge_embed = torch.cat([first_embed, second_embed, third_embed], 1)
-        merge_norm = merge_embed.norm(p=2, dim=1, keepdim=True)
         #DEBUG
         #print('Shape after nnorm: ', merge_norm.shape)
-        merge_embed = merge_embed.div(merge_norm.expand_as(merge_embed))
+        merge_embed = tnnf.normalize(merge_embed,p=2,dim=1)
 
         #DEBUG
         #print(merge_embed.shape, rn_embed.shape)
@@ -80,9 +73,7 @@ class ThreeEmbModel(torch.nn.Module):
         #DEBUG
         #print(final_embed.shape)
         final_embed = self.linearization(final_embed)
-        final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
-        output = final_embed.div(final_norm.expand_as(final_embed))
-
+        output = tnnf.normalize(final_embed,p=2,dim=1)
 
         return output
 
@@ -94,11 +85,11 @@ if __name__ == "__main__":
 
 
 
-    model = ThreeEmbModel()
+    model = ThreeEmbModel(resnet="resnet18")
 
     #TODO figure out fake batch creation, see pseudocode
 
-    fake_batch = torch.rand(size=(1, 3, 64, 64), dtype=torch.float32)#fake batch of one image
+    fake_batch = torch.rand(size=(2, 3, 64, 64), dtype=torch.float32)#fake batch of one image
 
     one_set_of_embeddings = model.forward(fake_batch) #the unsqeeze is because resnet only wants batches.
     print('SHAPE: ', one_set_of_embeddings.shape)

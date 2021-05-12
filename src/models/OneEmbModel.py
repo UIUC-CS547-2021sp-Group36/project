@@ -5,27 +5,18 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.models as tvmodels
 
+import torch.nn.functional as tnnf
 
-
+import models.resnet_factory as resnet_factory
 
 class OneEmbModel(torch.nn.Module):
     def __init__(self,resnet= "resnet101",out_features=1000, pretrained=True):
         super(OneEmbModel, self).__init__()
         self.out_features = out_features
 
-        self.resnet = None
+        self.resnet = resnet_factory.create_resnet(resnet,pretrained)
 
-        if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=pretrained)
-        elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=pretrained)
-        elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=pretrained)
-        elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=pretrained)
-        else:
-            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
-
+        #self.upsample_rn = torch.nn.Upsample(size=224, mode='bilinear')
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=48, kernel_size=8, padding=1, stride=8),
@@ -50,9 +41,10 @@ class OneEmbModel(torch.nn.Module):
 
     def forward(self, images):
 
-        rn_embed = self.resnet(images)
-        rn_norm = rn_embed.norm(p=2, dim=1, keepdim=True)
-        rn_embed = rn_embed.div(rn_norm.expand_as(rn_embed))
+        #images224 = self.upsample_rn(images)
+        images224 = images
+        rn_embed = self.resnet(images224)
+        rn_embed = tnnf.normalize(rn_embed,p=2, dim=1)
 
         embed = self.layer1(images)
         embed = self.layer2(embed)
@@ -61,19 +53,17 @@ class OneEmbModel(torch.nn.Module):
         embed = self.fc1(embed)
         embed = self.fc2(embed)
         #DEBUG
-        print('shape after fc2: ', embed.shape)
-        embed_norm = embed.norm(p=2, dim=1, keepdim=True)
-        embed = embed.div(embed_norm.expand_as(embed))
+        #print('shape after fc2: ', embed.shape)
+        embed = tnnf.normalize(embed, p=2, dim=1)
 
-        print('shape after norm: ', embed.shape)
+        #print('shape after norm: ', embed.shape)
 
         final_embed = torch.cat([rn_embed, embed], 1)
         #DEBUG
-        print('Embed after concatenating: ', final_embed.shape)
+        #print('Embed after concatenating: ', final_embed.shape)
 
         final_embed = self.linearization(final_embed)
-        final_norm = final_embed.norm(p=2, dim=1, keepdim=True)
-        output = final_embed.div(final_norm.expand_as(final_embed))
+        output = tnnf.normalize(final_embed, p=2, dim=1)
 
 
         return output
@@ -86,7 +76,7 @@ if __name__ == "__main__":
 
 
 
-    model = OneEmbModel()
+    model = OneEmbModel(resnet="resnet18")
 
     #TODO figure out fake batch creation, see pseudocode
 

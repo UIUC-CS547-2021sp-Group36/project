@@ -5,6 +5,11 @@ import torchvision.models as models
 import torchvision.models as tvmodels
 import torchvision.transforms
 
+
+import torch.nn.functional as tnnf
+
+import models.resnet_factory as resnet_factory
+
 torchvision_versions = list(map(int,tv.__version__.split(".")[:2]))
 
 import warnings
@@ -41,27 +46,16 @@ class RescaleResnet(torch.nn.Module):
     
     def __init__(self, resnet="resnet18", scale=(224,224), freeze_resnet=True,pretrained=True):
         super(RescaleResnet, self).__init__()
-        self.resnet = None
+        self.resnet = resnet_factory.create_resnet(resnet,pretrained)
         self.scale = scale
         self.transform = None
         
         if torchvision_versions[0] == 0 and torchvision_versions[1] <= 6:
             #Can't call scale on a Tensor in old torchvision
             warnings.warn("Old version of torchvision, using fallback rescale.")
-            self.transform = self.RescaleFallback(size=self.scale,mode="bilinear")
+            self.transform = torch.nn.Upsample(size=scale, mode='bilinear')
         else:
             self.transform = torchvision.transforms.Resize(self.scale)
-        
-        if resnet == "resnet18":
-            self.resnet = tvmodels.resnet18(pretrained=pretrained)
-        elif resnet == "resnet50":
-            self.resnet = tvmodels.resnet50(pretrained=pretrained)
-        elif resnet == "resnet101":
-            self.resnet = tvmodels.resnet101(pretrained=pretrained)
-        elif resnet == "resnet152":
-            self.resnet = tvmodels.resnet152(pretrained=pretrained)
-        else:
-            raise NotImplemented("I'm sorry, couldn't create inner model {}".format(resnet_name))
         
         #FREEZING (search other files)
         #This is supposed to help freeze the submodel, but the optimizer

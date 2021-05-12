@@ -30,37 +30,37 @@ def create_model(model_name="dummy"):
     elif model_name in ["newModel","NewModel"]:
         return NewModel()
     elif "paper_resnet18" == model_name:
-        return NewModel(resnet="resnet18", out_features=100)
+        return NewModel(resnet="resnet18", out_features=1000)
     elif "paper_resnet50" == model_name:
-        return NewModel(resnet="resnet50", out_features=100)
+        return NewModel(resnet="resnet50", out_features=1000)
     elif "paper_resnet101" == model_name:
-        return NewModel(resnet="resnet101", out_features=100)
+        return NewModel(resnet="resnet101", out_features=1000)
     elif "paper_resnet152" == model_name:
-        return NewModel(resnet="resnet152", out_features=100)
+        return NewModel(resnet="resnet152", out_features=1000)
     elif "OneEmbModel_resnet18" == model_name:
-        return OneEmbModel(resnet="resnet18", out_features=100)
+        return OneEmbModel(resnet="resnet18", out_features=1000)
     elif "OneEmbModel_resnet50" == model_name:
-        return OneEmbModel(resnet="resnet50", out_features=100)
+        return OneEmbModel(resnet="resnet50", out_features=1000)
     elif "OneEmbModel_resnet101" == model_name:
-        return OneEmbModel(resnet="resnet101", out_features=100)
+        return OneEmbModel(resnet="resnet101", out_features=1000)
     elif "OneEmbModel_resnet152" == model_name:
-        return OneEmbModel(resnet="resnet152", out_features=100)
+        return OneEmbModel(resnet="resnet152", out_features=1000)
     elif "OneEmbModel2_resnet18" == model_name:
-        return OneEmbModel2(resnet="resnet18", out_features=100)
+        return OneEmbModel2(resnet="resnet18", out_features=1000)
     elif "OneEmbModel2_resnet50" == model_name:
-        return OneEmbModel2(resnet="resnet50", out_features=100)
+        return OneEmbModel2(resnet="resnet50", out_features=1000)
     elif "OneEmbModel2_resnet101" == model_name:
-        return OneEmbModel2(resnet="resnet101", out_features=100)
+        return OneEmbModel2(resnet="resnet101", out_features=1000)
     elif "OneEmbModel2_resnet152" == model_name:
-        return OneEmbModel2(resnet="resnet152", out_features=100)
+        return OneEmbModel2(resnet="resnet152", out_features=1000)
     elif "ThreeEmbModel_resnet18" == model_name:
-        return ThreeEmbModel(resnet="resnet18", out_features=100)
+        return ThreeEmbModel(resnet="resnet18", out_features=1000)
     elif "ThreeEmbModel_resnet50" == model_name:
-        return ThreeEmbModel(resnet="resnet50", out_features=100)
+        return ThreeEmbModel(resnet="resnet50", out_features=1000)
     elif "ThreeEmbModel_resnet101" == model_name:
-        return ThreeEmbModel(resnet="resnet101", out_features=100)
+        return ThreeEmbModel(resnet="resnet101", out_features=1000)
     elif "ThreeEmbModel_resnet152" == model_name:
-        return ThreeEmbModel(resnet="resnet152", out_features=100)
+        return ThreeEmbModel(resnet="resnet152", out_features=1000)
     elif model_name in ["dummy", "Frozen_resnet18"]:
         return ResnetFrozenWrapper(resnet="resnet18")
     elif model_name in ["dummy30", "Frozen_resnet18_30"]:
