@@ -13,7 +13,8 @@ shifterimg pull luntlab/cs547_project:latest
 WANDB_ENTITY="uiuc-cs547-2021sp-group36"
 WANDB_PROJECT="image_similarity"
 
-RUNS="20mi8lwz 2vvezipo 1lqinpcj 37sw0tda 3gvpqxyk 3qk56buy"
+#RUNS="20mi8lwz 2vvezipo 1lqinpcj 37sw0tda 3gvpqxyk 3qk56buy"
+RUNS="17vm39k0 qg5hjev2 13hdhxd0"
 
 for one_run in ${RUNS}
 do
